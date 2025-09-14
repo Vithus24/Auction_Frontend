@@ -85,9 +85,9 @@ export default function RegisterForm() {
 
   return (
     <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200">
-      <div className="px-6 py-6 border-b border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900">Register</h2>
-        <p className="mt-2 text-sm text-gray-600">
+      <div className="px-6 py-6 border-b border-gray-200 justify-center text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-red-400 bg-clip-text text-transparent">Register</h2>
+        <p className="mt-2 text-sm bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
           Create your account to get started
         </p>
       </div>

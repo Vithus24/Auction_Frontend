@@ -33,29 +33,50 @@ export default function LoginForm() {
       }));
 
       console.log("Login dispatch result:", result);
-      
-      // Handle the response based on your Redux slice implementation
       if (result.payload) {
-        // If payload contains token directly as string
-        let token = result.payload;
+        let responseData;
         
-        // If payload is an object with token property
-        if (typeof result.payload === 'object' && result.payload.token) {
-          token = result.payload.token;
+        // If payload is an object (e.g., { id, email, role, token })
+        if (typeof result.payload === 'object' && result.payload !== null) {
+          responseData = result.payload;
         }
-        
-        // If payload is a string (JWT token), use it directly
-        if (typeof result.payload === 'string' && result.payload.startsWith('eyJ')) {
-          token = result.payload;
+        // If payload is a string (e.g., JSON string), parse it
+        else if (typeof result.payload === 'string') {
+          try {
+            responseData = JSON.parse(result.payload);
+          } catch (parseError) {
+            // If parsing fails, assume it's a raw token
+            responseData = { token: result.payload };
+          }
         }
 
-        if (token) {
-          // Store token in cookie or localStorage as needed
-          document.cookie = `token=${token}; Path=/; Secure; SameSite=Strict`;
-          console.log("Login successful, redirecting to dashboard");
-          router.push("/dashboard");
+        // Extract and store data in cookies
+        if (responseData) {
+          const { id, email, role, token } = responseData;
+          
+          if (id) document.cookie = `userId=${id}; Path=/; Secure; SameSite=Strict`;
+          if (email) document.cookie = `userEmail=${email}; Path=/; Secure; SameSite=Strict`;
+          if (role) document.cookie = `userRole=${role}; Path=/; Secure; SameSite=Strict`;
+          if (token) document.cookie = `token=${token}; Path=/; Secure; SameSite=Strict`;
+
+          console.log("Login successful, cookies set:", { id, email, role, token });
+
+          // Redirect based on role
+          switch (role) {
+            case 'ADMIN':
+              router.push("/auction/dashboard");
+              break;
+            case 'TEAM_OWNER':
+              router.push("/team/dashboard");
+              break;
+            case 'USER':
+              router.push("/user/dashboard");
+              break;
+            default:
+              throw new Error("Unknown role received");
+          }
         } else {
-          throw new Error("No token received from login");
+          throw new Error("No valid response data received");
         }
       } else {
         throw new Error("Login failed - no response payload");
@@ -70,9 +91,9 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200">
-      <div className="px-6 py-6 border-b border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900">Login</h2>
-        <p className="mt-2 text-sm text-gray-600">
+      <div className="px-6 py-6 border-b border-gray-200 justify-center text-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-red-400 bg-clip-text text-transparent">Login</h2>
+        <p className="mt-2 text-sm bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
           Enter your credentials to access your account
         </p>
       </div>
