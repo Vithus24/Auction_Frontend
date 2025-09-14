@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { User, Mail, Phone, Calendar, Shirt, Target, Check, AlertTriangle } from 'lucide-react'
+import Navbar from '@/components/Navbar'
 
 interface PlayerFormData {
   firstname: string
@@ -148,13 +149,15 @@ const PlayerRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 bg-[url(/bg1.jpg)] bg-cover bg-center bg-custom bg-cover bg-center">
+    <div className='bg-[url(/bg1.jpg)] bg-cover bg-center bg-custom bg-cover bg-center'>
+      <Navbar/>
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 ">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border mb-8">
-          <div className="px-8 py-6 border-b border-gray-200">
-            <h1 className="text-3xl font-semibold text-gray-900">Player Registration</h1>
-            <p className="mt-2 text-gray-600">
+          <div className="px-8 py-6 border-b border-gray-200 text-center">
+            <h1 className="text-4xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-red-400 bg-clip-text text-transparent">Player Registration</h1>
+            <p className="mt-2 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
               Complete your registration to participate in the upcoming auction
             </p>
           </div>
@@ -183,7 +186,7 @@ const PlayerRegistration = () => {
                     value={formData.firstname}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.firstname ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.firstname ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                     placeholder="Enter first name"
                   />
@@ -206,7 +209,7 @@ const PlayerRegistration = () => {
                     value={formData.lastname}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.lastname ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.lastname ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                     placeholder="Enter last name"
                   />
@@ -239,7 +242,7 @@ const PlayerRegistration = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                     placeholder="your.email@example.com"
                   />
@@ -262,7 +265,7 @@ const PlayerRegistration = () => {
                     value={formData.mobileno}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.mobileno ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.mobileno ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                     placeholder="Enter mobile number"
                   />
@@ -295,7 +298,7 @@ const PlayerRegistration = () => {
                     value={formData.dob}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.dob ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.dob ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                   />
                   {errors.dob && (
@@ -316,7 +319,7 @@ const PlayerRegistration = () => {
                     value={formData.typeOfSportCategory}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.typeOfSportCategory ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.typeOfSportCategory ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                   >
                     <option value="">Select sport category</option>
@@ -354,7 +357,7 @@ const PlayerRegistration = () => {
                     value={formData.tshirtSize}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.tshirtSize ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.tshirtSize ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                   >
                     <option value="">Select t-shirt size</option>
@@ -382,7 +385,7 @@ const PlayerRegistration = () => {
                     value={formData.bottomSize}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.bottomSize ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      errors.bottomSize ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                     }`}
                   >
                     <option value="">Select bottom size</option>
@@ -426,6 +429,7 @@ const PlayerRegistration = () => {
           </form>
         </div>
       </div>
+    </div>
     </div>
   )
 }

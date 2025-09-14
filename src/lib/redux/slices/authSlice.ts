@@ -1,5 +1,4 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { authApi } from "../../../services/authApi";
 
 interface User {
   id: number;
@@ -22,7 +21,7 @@ const initialState: AuthState = {
 };
 
 export const register = createAsyncThunk(
-  "auth/register",
+  "/register",
   async (credentials: { email: string; password: string; role: string }, { rejectWithValue }) => {
     try {
       const response = await fetch("http://localhost:8080/register", {
@@ -30,8 +29,20 @@ export const register = createAsyncThunk(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      
+      // Handle both JSON and plain text responses
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return await response.json();
+      } else {
+        // Return plain text response
+        return await response.text();
+      }
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -39,7 +50,7 @@ export const register = createAsyncThunk(
 );
 
 export const login = createAsyncThunk(
-  "auth/login",
+  "/login",
   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await fetch("http://localhost:8080/login", {
@@ -47,9 +58,18 @@ export const login = createAsyncThunk(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
-      if (!response.ok) throw new Error(await response.text());
-      return await response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      
+      // Since your backend returns JWT token as plain text, use text() instead of json()
+      const token = await response.text();
+      console.log("Login successful, received token:", token.substring(0, 20) + "...");
+      return token.trim(); // Remove any whitespace
     } catch (error) {
+      console.error("Login error in thunk:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -62,6 +82,13 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      // Clear cookie
+      if (typeof document !== 'undefined') {
+        document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      }
+    },
+    setToken: (state, action) => {
+      state.token = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -72,9 +99,8 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
-        // Assuming register returns token; adjust if needed
-        state.token = action.payload.token;
+        // Handle register response (usually just a success message)
+        console.log("Registration successful:", action.payload);
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -86,15 +112,18 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
+        // action.payload is now the JWT token string
         state.token = action.payload;
-        // Fetch user details if needed
+        state.error = null;
+        console.log("Token stored in Redux state");
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.token = null;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setToken } = authSlice.actions;
 export default authSlice.reducer;
