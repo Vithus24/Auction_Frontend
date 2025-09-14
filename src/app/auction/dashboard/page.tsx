@@ -116,10 +116,10 @@ export default function AuctionDashboard() {
             <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-red-400 bg-clip-text text-transparent">
                     Auction Dashboard
                   </h1>
-                  <p className="text-gray-600 text-lg">Manage your auctions and track performance</p>
+                  <p className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent text-lg">Manage your auctions and track performance</p>
                 </div>
                 <button 
                   onClick={() => setShowAddModal(true)}
