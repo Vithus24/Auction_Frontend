@@ -3,6 +3,8 @@
 import React, { useState } from 'react'
 import { Calendar, Target, DollarSign, Award } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import useAuthToken from '../../../lib/hooks/useAuthToken'
+import useUserData from '@/lib/hooks/useUserData'
 
 interface AuctionFormData {
   auctionName: string
@@ -26,7 +28,8 @@ const AuctionRegistration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Partial<AuctionFormData>>({})
-
+  const { token } = useAuthToken()
+  const { userId } = useUserData();
   const sportCategories = [
     'Cricket',
     'Football',
@@ -87,18 +90,29 @@ const AuctionRegistration = () => {
     setIsSubmitting(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Here you would make the actual API call to your Spring Boot backend
-      // const response = await fetch('/api/auctions', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // })
-      
+      const response = await fetch(`http://localhost:8080/auctions?adminId=${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          auctionName: formData.auctionName,
+          auctionDate: formData.auctionDate,
+          typeOfSport: formData.typeOfSport,
+          bidIncreaseBy: Number(formData.bidIncreaseBy),
+          minimumBid: Number(formData.minimumBid),
+          pointsPerTeam: Number(formData.pointsPerTeamPlayerPerTeam), // Renamed to match backend
+          playerPerTeam: 11, // Default value; adjust as needed
+          status: 'OPEN', // Default status
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create auction');
+      }
+
       setIsSuccess(true)
       
       setTimeout(() => {

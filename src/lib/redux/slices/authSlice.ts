@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface User {
   id: number;
@@ -35,13 +35,12 @@ export const register = createAsyncThunk(
         throw new Error(errorText);
       }
       
-      // Handle both JSON and plain text responses
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        return await response.json();
+        const data = await response.json();
+        return data; // Expect { id, email, role, token? }
       } else {
-        // Return plain text response
-        return await response.text();
+        return await response.text(); // Fallback to plain text (e.g., success message)
       }
     } catch (error) {
       return rejectWithValue((error as Error).message);
@@ -64,10 +63,15 @@ export const login = createAsyncThunk(
         throw new Error(errorText);
       }
       
-      // Since your backend returns JWT token as plain text, use text() instead of json()
-      const token = await response.text();
-      console.log("Login successful, received token:", token.substring(0, 20) + "...");
-      return token.trim(); // Remove any whitespace
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        return data; // Expect { id, email, role, token }
+      } else {
+        const token = await response.text();
+        console.log("Login successful, received token:", token.substring(0, 20) + "...");
+        return { token: token.trim() }; // Return as object for consistency
+      }
     } catch (error) {
       console.error("Login error in thunk:", error);
       return rejectWithValue((error as Error).message);
@@ -82,13 +86,18 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
-      // Clear cookie
       if (typeof document !== 'undefined') {
         document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "userId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "userEmail=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "userRole=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       }
     },
-    setToken: (state, action) => {
+    setToken: (state, action: PayloadAction<string | null>) => {
       state.token = action.payload;
+    },
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -99,8 +108,13 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        // Handle register response (usually just a success message)
-        console.log("Registration successful:", action.payload);
+        const payload = action.payload;
+        if (typeof payload === 'object' && payload !== null && 'id' in payload && 'email' in payload && 'role' in payload) {
+          state.user = { id: payload.id, email: payload.email, role: payload.role };
+          if ('token' in payload) state.token = payload.token;
+        } else {
+          console.log("Registration successful:", payload);
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -112,18 +126,24 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        // action.payload is now the JWT token string
-        state.token = action.payload;
+        const payload = action.payload;
+        if (typeof payload === 'object' && payload !== null) {
+          if ('token' in payload) state.token = payload.token;
+          if ('id' in payload && 'email' in payload && 'role' in payload) {
+            state.user = { id: payload.id, email: payload.email, role: payload.role };
+          }
+        }
         state.error = null;
-        console.log("Token stored in Redux state");
+        console.log("Token and user stored in Redux state");
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
         state.token = null;
+        state.user = null;
       });
   },
 });
 
-export const { logout, setToken } = authSlice.actions;
+export const { logout, setToken, setUser } = authSlice.actions;
 export default authSlice.reducer;
