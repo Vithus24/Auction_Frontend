@@ -10,31 +10,26 @@ import JobAuctionSection from "@/components/AuctionHubLanding/JobAuctionSection"
 import ContactSection from "@/components/AuctionHubLanding/ContactSection";
 import Footer from "@/components/AuctionHubLanding/Footer";
 
-// 👇 Import your landing pages
 import SportLandingPage from "@/components/AuctionsLandingPages/SportLandingPage"
 import ProductLandingPage from "@/components/AuctionsLandingPages/ProductLandingPage";
 import JobLandingPage from "@/components/AuctionsLandingPages/JobLandingPage";
 
 const AuctionLanding = () => {
   const [theme, setTheme] = useState("dark");
-  const [currentPage, setCurrentPage] = useState("home"); // ✅ Track current page
-
+  const [currentPage, setCurrentPage] = useState("home"); 
   const toggleTheme = () => setTheme(prev => (prev === "dark" ? "light" : "dark"));
   const getThemeClasses = (darkClass: string, lightClass: string) =>
     theme === "dark" ? darkClass : lightClass;
 
-  // Scroll helper for sections (only used on home page)
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
-  // ✅ Page navigation function
   const navigateToPage = (page: string) => {
     setCurrentPage(page);
   };
 
-  // ✅ Conditional Rendering
   if (currentPage === "sports") {
     return (
       <SportLandingPage
@@ -68,7 +63,6 @@ const AuctionLanding = () => {
     );
   }
 
-  // ✅ Default Home Page
   return (
     <div className={theme === "dark" ? "bg-black text-white" : "bg-white text-black"}>
       <Navbar
