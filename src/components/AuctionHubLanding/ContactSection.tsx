@@ -42,7 +42,6 @@ const ContactSection: React.FC<ContactSectionProps> = ({ getThemeClasses }) => {
         </p>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Contact Info */}
           <div className="space-y-6 text-left">
             <div className="flex items-center space-x-3">
               <MapPin className={getThemeClasses("text-purple-400", "text-purple-600")} />

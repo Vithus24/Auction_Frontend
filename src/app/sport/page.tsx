@@ -1,20 +1,29 @@
+
+
+
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Hammer, LogIn, Sun, Moon, Clock } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-interface SportLandingPageProps {
-  navigateToPage: (page: string) => void;
-  getThemeClasses: (darkClass: string, lightClass: string) => string;
-  toggleTheme: () => void;
-  theme: string;
-}
+const SportLandingPage: React.FC = () => {
+  const router = useRouter();
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
-const SportLandingPage: React.FC<SportLandingPageProps> = ({
-  navigateToPage,
-  getThemeClasses,
-  toggleTheme,
-  theme,
-}) => {
+  const getThemeClasses = (darkClass: string, lightClass: string) =>
+    theme === "dark" ? darkClass : lightClass;
+
+  const navigateToPage = (page: string) => {
+    if (page === "home") {
+      router.push("/"); 
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   const auctions = [
     { title: "Michael Jordan Jersey", price: "$8,500", time: "2d 14h", image: "🏀" },
     { title: "Baseball Signed by Babe Ruth", price: "$12,000", time: "1d 8h", image: "⚾" },
@@ -36,7 +45,6 @@ const SportLandingPage: React.FC<SportLandingPageProps> = ({
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            {/* Logo */}
             <div
               className="flex items-center space-x-3 cursor-pointer"
               onClick={() => navigateToPage("home")}
@@ -77,18 +85,20 @@ const SportLandingPage: React.FC<SportLandingPageProps> = ({
               >
                 Back to Home
               </button>
-              <button
-                className={`${getThemeClasses(
-                  "bg-gradient-to-r from-blue-600 to-cyan-600",
-                  "bg-gradient-to-r from-blue-400 to-cyan-400"
-                )} px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1 ${getThemeClasses(
-                  "text-white",
-                  "text-black"
-                )}`}
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login/Register</span>
-              </button>
+              <Link href="/register">
+                <button
+                  className={`${getThemeClasses(
+                    "bg-gradient-to-r from-blue-600 to-cyan-600",
+                    "bg-gradient-to-r from-blue-400 to-cyan-400"
+                  )} px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1 ${getThemeClasses(
+                    "text-white",
+                    "text-black"
+                  )}`}
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Login/Register</span>
+                </button>
+              </Link>
               <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-700/50">
                 {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
@@ -97,6 +107,7 @@ const SportLandingPage: React.FC<SportLandingPageProps> = ({
         </div>
       </nav>
 
+      {/* Content */}
       <div className="pt-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl font-bold mb-4">
@@ -125,10 +136,20 @@ const SportLandingPage: React.FC<SportLandingPageProps> = ({
                 <div className="text-6xl mb-4 text-center">{item.image}</div>
                 <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                 <div className="flex justify-between items-center mb-4">
-                  <span className={`text-2xl font-bold ${getThemeClasses("text-cyan-400", "text-cyan-600")}`}>
+                  <span
+                    className={`text-2xl font-bold ${getThemeClasses(
+                      "text-cyan-400",
+                      "text-cyan-600"
+                    )}`}
+                  >
                     {item.price}
                   </span>
-                  <div className={`flex items-center space-x-1 ${getThemeClasses("text-red-400", "text-red-600")}`}>
+                  <div
+                    className={`flex items-center space-x-1 ${getThemeClasses(
+                      "text-red-400",
+                      "text-red-600"
+                    )}`}
+                  >
                     <Clock className="w-4 h-4" />
                     <span className="text-sm">{item.time}</span>
                   </div>

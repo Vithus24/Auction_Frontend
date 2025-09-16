@@ -24,6 +24,7 @@ export default function RegisterForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -39,7 +40,7 @@ export default function RegisterForm() {
           password: formData.password,
           role: formData.role,
         })).then((res) => res.payload);
-        
+
         console.log("Registration response:", response);
 
         // Handle plain text or JSON response
@@ -56,17 +57,17 @@ export default function RegisterForm() {
             code: formData.otp,
           }),
         });
-        
+
         const verifyData = await verifyResponse.text();
         console.log("Verify OTP response:", verifyResponse.status, verifyData);
 
         if (!verifyResponse.ok) {
           throw new Error(verifyData || "Invalid OTP or verification failed");
         }
-        
+
         console.log("OTP verified successfully");
         setSuccessMessage("Email verified successfully! Redirecting to login...");
-        
+
         // Redirect after a brief delay to show success message
         setTimeout(() => {
           router.push("/login");
@@ -82,6 +83,32 @@ export default function RegisterForm() {
       setLoading(false);
     }
   };
+
+  const handleResendOTP = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      setSuccessMessage("");
+
+      console.log("Resending OTP with data:", formData);
+
+      const response = await dispatch(register({
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      })).then((res) => res.payload);
+
+      const message = typeof response === "string" ? response : response?.message || "OTP resent successfully";
+      setSuccessMessage(message);
+
+    } catch (err) {
+      console.error("Error resending OTP:", err);
+      setError((err as Error).message || "Failed to resend OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="w-full max-w-md bg-white rounded-lg shadow-lg border border-gray-200">
@@ -163,8 +190,16 @@ export default function RegisterForm() {
                 placeholder="Enter the OTP sent to your email"
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 flex items-center gap-2">
                 Please check your email for the verification code
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={loading}
+                  className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  Resend OTP
+                </button>
               </p>
             </div>
           )}
@@ -184,11 +219,10 @@ export default function RegisterForm() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-              loading
-                ? "bg-gray-400 text-white cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
-            }`}
+            className={`w-full py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${loading
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+              }`}
           >
             {loading ? (
               <div className="flex items-center justify-center">
@@ -203,8 +237,8 @@ export default function RegisterForm() {
       <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
         <p className="text-sm text-center text-gray-600">
           Already have an account?
-          <Link 
-            href="/login" 
+          <Link
+            href="/login"
             className="text-blue-600 hover:text-blue-500 hover:underline ml-1 font-medium"
           >
             Login
