@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Hammer, LogIn, Sun, Moon, Clock } from "lucide-react";
+import Link from "next/link";
 
 interface SportLandingPageProps {
   navigateToPage: (page: string) => void;
@@ -87,7 +88,8 @@ const SportLandingPage: React.FC<SportLandingPageProps> = ({
                 )}`}
               >
                 <LogIn className="w-4 h-4" />
-                <span>Login/Register</span>
+                <Link href="/register">
+                <span>Login/Register</span></Link>
               </button>
               <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-700/50">
                 {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
