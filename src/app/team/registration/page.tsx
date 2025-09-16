@@ -1,89 +1,108 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { Users, Mail } from 'lucide-react'
-import Navbar from '@/components/Navbar'
+import React, { useState } from 'react';
+import { Users, Mail, AlertTriangle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import { useSearchParams, useRouter } from 'next/navigation';
+import useAuthToken from '@/lib/hooks/useAuthToken'; // Adjust the import path as needed
 
 interface TeamFormData {
-  name: string
-  ownerMail: string
+  name: string;
+  ownerMail: string;
 }
 
 const TeamRegistration = () => {
   const [formData, setFormData] = useState<TeamFormData>({
     name: '',
     ownerMail: '',
-  })
+  });
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [errors, setErrors] = useState<Partial<TeamFormData>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [errors, setErrors] = useState<Partial<TeamFormData>>({});
+  const { token } = useAuthToken();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const auctionId = searchParams.get('auctionId');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
+    }));
     
     if (errors[name as keyof TeamFormData]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
-      }))
+      }));
     }
-  }
+  };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<TeamFormData> = {}
+    const newErrors: Partial<TeamFormData> = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Team name is required'
+    if (!formData.name.trim()) newErrors.name = 'Team name is required';
     if (!formData.ownerMail.trim()) {
-      newErrors.ownerMail = 'Owner email is required'
+      newErrors.ownerMail = 'Owner email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.ownerMail)) {
-      newErrors.ownerMail = 'Please enter a valid email'
+      newErrors.ownerMail = 'Please enter a valid email';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Here you would make the actual API call to your Spring Boot backend
-      // const response = await fetch('/api/teams', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // })
-      
-      setIsSuccess(true)
+      // Assuming ownerId needs to be fetched or hardcoded for now (replace with actual logic)
+      const ownerId = 2; // Placeholder; replace with dynamic owner ID logic if needed
+
+      const teamData = {
+        name: formData.name,
+        budget: 1000000.0, // Default budget as per example; adjust as needed
+        owner: { id: ownerId },
+        auction: { id: auctionId ? parseInt(auctionId) : null }, // Include auctionId if available
+      };
+
+      const response = await fetch('http://localhost:8080/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`,
+        },
+        body: JSON.stringify(teamData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register team');
+      }
+
+      setIsSuccess(true);
       
       setTimeout(() => {
         setFormData({
           name: '',
           ownerMail: '',
-        })
-        setIsSuccess(false)
-      }, 3000)
+        });
+        setIsSuccess(false);
+        router.push('/auction/dashboard'); // Redirect back to dashboard after success
+      }, 3000);
       
     } catch (error) {
-      console.error('Registration failed:', error)
+      console.error('Registration failed:', error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   if (isSuccess) {
     return (
@@ -102,7 +121,7 @@ const TeamRegistration = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -206,7 +225,7 @@ const TeamRegistration = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TeamRegistration
+export default TeamRegistration;
