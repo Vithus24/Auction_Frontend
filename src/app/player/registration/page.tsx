@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { User, Mail, Phone, Calendar, Shirt, Target, Check, AlertTriangle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useRouter, useSearchParams } from 'next/navigation';
-import useAuthToken from '@/lib/hooks/useAuthToken'; // Adjust the import path as needed
+import useAuthToken from '@/lib/hooks/useAuthToken';
 
 interface PlayerFormData {
   firstname: string;
@@ -32,6 +32,7 @@ const PlayerRegistration = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<Partial<PlayerFormData>>({});
+  const [image, setImage] = useState<File | null>(null);
   const { token } = useAuthToken();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -67,6 +68,12 @@ const PlayerRegistration = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImage(e.target.files[0]);
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<PlayerFormData> = {};
 
@@ -99,19 +106,22 @@ const PlayerRegistration = () => {
     setIsSubmitting(true);
     
     try {
-      const playerData = {
+      const formDataToSend = new FormData();
+      formDataToSend.append('player', new Blob([JSON.stringify({
         ...formData,
-        auction: { id: auctionId ? parseInt(auctionId) : null }, // Include auctionId if available
+        auction: { id: auctionId ? parseInt(auctionId) : null },
         sold: false,
-      };
+      })], { type: 'application/json' }));
+      if (image) {
+        formDataToSend.append('image', image);
+      }
 
       const response = await fetch('http://localhost:8080/players', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token || ''}`,
         },
-        body: JSON.stringify(playerData),
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -131,8 +141,9 @@ const PlayerRegistration = () => {
           bottomSize: '',
           typeOfSportCategory: ''
         });
+        setImage(null);
         setIsSuccess(false);
-        router.push('/auction/dashboard'); // Redirect back to dashboard after success
+        router.push('/auction/dashboard');
       }, 3000);
       
     } catch (error) {
@@ -144,7 +155,7 @@ const PlayerRegistration = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[url(/bg1.jpg)]  bg-custom bg-cover bg-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm "></div>
         <div className="bg-white/95 backdrop-blur-md rounded-lg shadow-lg p-8 text-center max-w-md w-full border border-white/20 relative z-10">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -416,6 +427,27 @@ const PlayerRegistration = () => {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-6">
+                <div className="flex items-center pb-4 border-b border-gray-200">
+                  <Target className="w-5 h-5 text-gray-500 mr-3" />
+                  <h3 className="text-lg font-medium text-gray-900">Player Image</h3>
+                </div>
+                <div>
+                  <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Player Image
+                  </label>
+                  <input
+                    type="file"
+                    id="image"
+                    name="image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors border-gray-300 text-gray-700"
+                  />
                 </div>
               </div>
 
