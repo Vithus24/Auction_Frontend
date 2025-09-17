@@ -704,14 +704,14 @@ export default function PlayersPage() {
                           <div className={`flex ${viewMode === 'list' ? 'flex-row space-x-2' : 'flex-wrap gap-2 justify-center'}`}>
                             <button 
                               onClick={() => { setModalMode('view'); fetchPlayerDetails(player.id); }}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1"
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
                             >
                               <Eye className="w-4 h-4" />
                               {viewMode === 'grid' && <span>View</span>}
                             </button>
                             <button 
                               onClick={() => { setModalMode('edit'); fetchPlayerDetails(player.id); }}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
                               {viewMode === 'grid' && <span>Edit</span>}
@@ -721,7 +721,7 @@ export default function PlayersPage() {
                                 setPlayerToDelete(player);
                                 setDeleteModalOpen(true);
                               }}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1"
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                               {viewMode === 'grid' && <span>Delete</span>}
