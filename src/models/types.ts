@@ -1,5 +1,6 @@
 // src/models/types.ts
 export interface Player {
+  points: string;
   id: string;
   name: string;
   role: string;

@@ -391,7 +391,6 @@ const AuctionPage: React.FC<AuctionPageProps> = ({ auctionId, userRole }) => {
             {/* Recent Bids */}
             <RecentBids
               bids={auctionState.recentBids}
-              currentPlayerId={auctionState.auction.currentPlayerId}
             />
 
             {/* Admin Controls */}
