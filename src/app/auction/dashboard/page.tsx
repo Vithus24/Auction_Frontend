@@ -337,7 +337,7 @@ export default function AuctionDashboard() {
                               <span>Edit</span>
                             </button>
                             <button
-                              onClick={() => router.push(`/player/registration?auctionId=${auction.id}`)}
+                              onClick={() => router.push(`/player/list?auctionId=${auction.id}`)}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
                             >
                               <Users className="w-4 h-4" />

@@ -19,111 +19,170 @@ import {
   MoreVertical,
   Star,
   Award,
-  Activity
+  Activity,
+  Link
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import useAuthToken from '@/lib/hooks/useAuthToken';
 
-// Mock player data - replace with your API calls
-const mockPlayers = [
-  {
-    id: 1,
-    name: "John Smith",
-    age: 28,
-    sport: "Football",
-    image: "/api/placeholder/150/150",
-    position: "Forward",
-    experience: "5 years",
-    rating: 4.8,
-    status: "active",
-    joinDate: "2023-01-15",
-    matches: 45,
-    goals: 32
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    age: 24,
-    sport: "Basketball",
-    image: "/api/placeholder/150/150",
-    position: "Point Guard",
-    experience: "3 years",
-    rating: 4.6,
-    status: "active",
-    joinDate: "2023-03-20",
-    matches: 38,
-    goals: 0
-  },
-  {
-    id: 3,
-    name: "Mike Davis",
-    age: 31,
-    sport: "Tennis",
-    image: "/api/placeholder/150/150",
-    position: "Singles",
-    experience: "8 years",
-    rating: 4.9,
-    status: "inactive",
-    joinDate: "2022-06-10",
-    matches: 67,
-    goals: 0
-  },
-  {
-    id: 4,
-    name: "Emma Wilson",
-    age: 26,
-    sport: "Cricket",
-    image: "/api/placeholder/150/150",
-    position: "Batsman",
-    experience: "4 years",
-    rating: 4.7,
-    status: "active",
-    joinDate: "2023-02-28",
-    matches: 29,
-    goals: 0
-  },
-  {
-    id: 5,
-    name: "Alex Rodriguez",
-    age: 29,
-    sport: "Football",
-    image: "/api/placeholder/150/150",
-    position: "Midfielder",
-    experience: "6 years",
-    rating: 4.5,
-    status: "active",
-    joinDate: "2022-11-12",
-    matches: 52,
-    goals: 18
-  },
-  {
-    id: 6,
-    name: "Lisa Chen",
-    age: 23,
-    sport: "Volleyball",
-    image: "/api/placeholder/150/150",
-    position: "Setter",
-    experience: "2 years",
-    rating: 4.4,
-    status: "active",
-    joinDate: "2023-04-05",
-    matches: 24,
-    goals: 0
-  }
-];
+interface Player {
+  id: number;
+  firstname: string;
+  lastname: string;
+  age?: number;
+  sport: string;
+  image?: string; // This will be the complete data URI from backend
+  position?: string;
+  experience?: string;
+  rating?: number;
+  status: string;
+  joinDate: string;
+  matches?: number;
+  goals?: number;
+  auctionId: number;
+}
 
 const sportCategories = ["All Sports", "Football", "Basketball", "Tennis", "Cricket", "Volleyball"];
+const DEFAULT_ICON = '/api/placeholder/150/150';
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState(mockPlayers);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSport, setFilterSport] = useState('All Sports');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('name');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const { token } = useAuthToken();
+
+  const auctionId = searchParams.get('auctionId');
+
+  // Fetch players from API
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (!auctionId) {
+        setError('Auction ID is required');
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        console.log(`🔄 Fetching players for auction ID: ${auctionId}`);
+        
+        const response = await fetch(`http://localhost:8080/players/auction/${auctionId}`, {
+          headers: {
+            'Authorization': `Bearer ${token || ''}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log(`📡 API Response Status: ${response.status}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API Error:', errorText);
+          throw new Error(`Failed to fetch players: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 Raw API Data:', data);
+        console.log(`📊 Number of players received: ${data.length}`);
+
+        // Map backend data to match interface
+        const mappedPlayers = data.map((player: any, index: number) => {
+          console.log(`👤 Processing Player ${index + 1}:`, {
+            id: player.id,
+            name: `${player.firstname} ${player.lastname}`,
+            hasImage: !!player.imageBase64,
+            imagePreview: player.imageBase64 ? player.imageBase64.substring(0, 50) + '...' : 'No image',
+            imageType: player.imageType || 'Unknown',
+          });
+
+          // Calculate age from DOB
+          let calculatedAge = null;
+          if (player.dob) {
+            try {
+              const birthDate = new Date(player.dob);
+              const today = new Date();
+              calculatedAge = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+              console.log(`🎂 Calculated age for ${player.firstname}: ${calculatedAge} years`);
+            } catch (ageError) {
+              console.warn(`⚠️ Could not calculate age for ${player.firstname}:`, ageError);
+            }
+          }
+
+          return {
+            id: player.id,
+            firstname: player.firstname,
+            lastname: player.lastname,
+            age: calculatedAge,
+            sport: player.typeOfSportCategory || 'Unknown',
+            // Use the imageBase64 directly from backend (it's already in data URI format)
+            image: player.imageBase64 || null,
+            position: player.typeOfSportCategory || 'Player',
+            experience: getExperienceForSport(player.typeOfSportCategory),
+            rating: generateMockRating(),
+            status: player.sold ? 'inactive' : 'active',
+            joinDate: player.dob || new Date().toISOString().split('T')[0],
+            matches: Math.floor(Math.random() * 50),
+            goals: Math.floor(Math.random() * 20), 
+            auctionId: player.auctionId,
+          };
+        });
+
+        console.log('✅ Mapped Players:', mappedPlayers);
+        console.log(`🖼️  Players with images: ${mappedPlayers.filter(p => p.image).length}`);
+        console.log(`🚫 Players without images: ${mappedPlayers.filter(p => !p.image).length}`);
+
+        setPlayers(mappedPlayers);
+      } catch (err) {
+        console.error('💥 Fetch Error:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlayers();
+  }, [auctionId, token]);
+
+  // Helper function to get experience based on sport
+  const getExperienceForSport = (sport: string) => {
+    const experiences = {
+      'Football': '4-6 years',
+      'Basketball': '3-5 years',
+      'Cricket': '5-7 years',
+      'Tennis': '2-4 years',
+      'Volleyball': '3-5 years'
+    };
+    return experiences[sport as keyof typeof experiences] || '2-3 years';
+  };
+
+  // Helper function to generate mock rating
+  const generateMockRating = () => {
+    return Math.round((Math.random() * 2 + 3) * 10) / 10; // Rating between 3.0 and 5.0
+  };
+
+  // Image error handler
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>, playerName: string) => {
+    console.error(`🖼️ Image load error for ${playerName}:`, event);
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+  };
+
+  // Image load success handler
+  const handleImageLoad = (playerName: string) => {
+    console.log(`✅ Image loaded successfully for ${playerName}`);
+  };
 
   // Filter and search players
   const filteredPlayers = players.filter(player => {
-    const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = player.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         player.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.sport.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSport = filterSport === 'All Sports' || player.sport === filterSport;
     const matchesStatus = filterStatus === 'all' || player.status === filterStatus;
@@ -134,13 +193,13 @@ export default function PlayersPage() {
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
     switch (sortBy) {
       case 'name':
-        return a.name.localeCompare(b.name);
+        return `${a.firstname} ${a.lastname}`.localeCompare(`${b.firstname} ${b.lastname}`);
       case 'age':
-        return a.age - b.age;
+        return (a.age || 0) - (b.age || 0);
       case 'rating':
-        return b.rating - a.rating;
+        return (b.rating || 0) - (a.rating || 0);
       case 'experience':
-        return parseInt(b.experience) - parseInt(a.experience);
+        return (parseInt((b.experience || '0').split('-')[0]) || 0) - (parseInt((a.experience || '0').split('-')[0]) || 0);
       default:
         return 0;
     }
@@ -167,8 +226,70 @@ export default function PlayersPage() {
     total: players.length,
     active: players.filter(p => p.status === 'active').length,
     inactive: players.filter(p => p.status === 'inactive').length,
-    avgRating: (players.reduce((sum, p) => sum + p.rating, 0) / players.length).toFixed(1)
+    avgRating: players.length > 0 ? (players.reduce((sum, p) => sum + (p.rating || 0), 0) / players.length).toFixed(1) : '0.0'
   };
+
+  // Player Image Component with proper error handling
+  const PlayerImage = ({ player, className }: { player: Player, className: string }) => {
+    const [imageError, setImageError] = useState(false);
+    const playerName = `${player.firstname} ${player.lastname}`;
+
+    console.log(`🖼️ Rendering image for ${playerName}:`, {
+      hasImage: !!player.image,
+      imageLength: player.image?.length || 0,
+      isDataUri: player.image?.startsWith('data:') || false
+    });
+
+    if (!player.image || imageError) {
+      return (
+        <div className={`${className} bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg`}>
+          <User className="w-16 h-16 text-indigo-600" />
+        </div>
+      );
+    }
+
+    return (
+      <div className={`${className} bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl shadow-lg overflow-hidden`}>
+        <img 
+          src={player.image} 
+          alt={playerName}
+          className="w-full h-full object-cover"
+          onLoad={() => handleImageLoad(playerName)}
+          onError={(e) => {
+            handleImageError(e, playerName);
+            setImageError(true);
+          }}
+        />
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-center">Loading players...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-md">
+          <p className="text-red-600 text-lg font-medium mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
@@ -188,6 +309,7 @@ export default function PlayersPage() {
                   </h1>
                   <p className="text-gray-600 text-lg">Manage and organize all registered players</p>
                 </div>
+             
                 <button 
                   onClick={() => setShowAddModal(true)}
                   className="mt-6 lg:mt-0 bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow-lg flex items-center space-x-2"
@@ -195,6 +317,7 @@ export default function PlayersPage() {
                   <Plus className="w-5 h-5" />
                   <span>Add New Player</span>
                 </button>
+        
               </div>
             </div>
           </div>
@@ -365,9 +488,10 @@ export default function PlayersPage() {
                       
                       {/* Player Image */}
                       <div className={`${viewMode === 'list' ? 'w-24 h-24 mr-6' : 'w-full h-48 mb-4'} relative`}>
-                        <div className={`${viewMode === 'list' ? 'w-24 h-24' : 'w-32 h-32 mx-auto'} bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden`}>
-                          <User className={`${viewMode === 'list' ? 'w-12 h-12' : 'w-16 h-16'} text-indigo-600`} />
-                        </div>
+                        <PlayerImage 
+                          player={player} 
+                          className={viewMode === 'list' ? 'w-24 h-24' : 'w-32 h-32 mx-auto'} 
+                        />
                         <div className={`absolute ${viewMode === 'list' ? 'top-0 right-0' : '-top-2 -right-2'} bg-white rounded-full p-2 shadow-lg`}>
                           <div className={`px-2 py-1 rounded-full border text-xs font-medium ${getStatusColor(player.status)}`}>
                             {player.status}
@@ -379,12 +503,12 @@ export default function PlayersPage() {
                       <div className={`${viewMode === 'list' ? 'flex-1' : ''}`}>
                         <div className={`${viewMode === 'list' ? 'flex items-center justify-between' : 'text-center'}`}>
                           <div className={`${viewMode === 'list' ? 'text-left' : ''}`}>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{player.name}</h3>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{`${player.firstname} ${player.lastname}`}</h3>
                             
                             <div className={`flex ${viewMode === 'list' ? 'space-x-4' : 'flex-col space-y-2'} mb-4`}>
                               <div className="flex items-center space-x-2">
                                 <Calendar className="w-4 h-4 text-gray-500" />
-                                <span className="text-gray-600">{player.age} years</span>
+                                <span className="text-gray-600">{player.age ? `${player.age} years` : 'Age unknown'}</span>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <Trophy className="w-4 h-4 text-gray-500" />
@@ -401,10 +525,10 @@ export default function PlayersPage() {
                             <div className={`flex items-center ${viewMode === 'list' ? 'space-x-4' : 'justify-center space-x-2'} mb-4`}>
                               <div className="flex items-center space-x-1">
                                 <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                <span className="text-sm font-medium">{player.rating}</span>
+                                <span className="text-sm font-medium">{player.rating?.toFixed(1) || 0}</span>
                               </div>
                               <span className="text-gray-300">•</span>
-                              <span className="text-sm text-gray-600">{player.experience} exp</span>
+                              <span className="text-sm text-gray-600">{player.experience || 'N/A'}</span>
                             </div>
                           </div>
 
@@ -431,6 +555,22 @@ export default function PlayersPage() {
               )}
             </div>
           </div>
+
+          {/* Add Player Modal - Placeholder */}
+          {showAddModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                <h3 className="text-xl font-bold mb-4">Add New Player</h3>
+                <p className="text-gray-600 mb-4">Player creation form would go here</p>
+                <button 
+                  onClick={() => setShowAddModal(false)} 
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
