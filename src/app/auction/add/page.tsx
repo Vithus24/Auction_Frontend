@@ -5,6 +5,8 @@ import { Calendar, Target, DollarSign, Award, AlertTriangle } from 'lucide-react
 import Navbar from '@/components/Navbar'
 import useAuthToken from '../../../lib/hooks/useAuthToken'
 import useUserData from '@/lib/hooks/useUserData'
+import { useRouter } from 'next/navigation'
+
 
 interface AuctionFormData {
   auctionName: string
@@ -88,6 +90,8 @@ const AuctionRegistration = () => {
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+  const router = useRouter()
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,6 +127,7 @@ const AuctionRegistration = () => {
       setIsSuccess(true)
       
       setTimeout(() => {
+        router.push('/auction/dashboard')
         setFormData({
           auctionName: '',
           auctionDate: '',

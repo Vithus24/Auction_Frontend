@@ -31,7 +31,7 @@ interface Player {
   lastname: string;
   age?: number;
   sport: string;
-  image?: string; // This will be the complete data URI from backend
+  image?: string;
   position?: string;
   experience?: string;
   rating?: number;
@@ -52,7 +52,7 @@ export default function PlayersPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('name');
-  const [showAddModal, setShowAddModal] = useState(false);
+//   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -68,14 +68,17 @@ export default function PlayersPage() {
         setLoading(false);
         return;
       }
+      if (!token) return; // Skip if no token yet
 
       setLoading(true);
+      setError(null); // Clear previous error
+
       try {
         console.log(`🔄 Fetching players for auction ID: ${auctionId}`);
         
         const response = await fetch(`http://localhost:8080/players/auction/${auctionId}`, {
           headers: {
-            'Authorization': `Bearer ${token || ''}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -85,6 +88,9 @@ export default function PlayersPage() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('❌ API Error:', errorText);
+          if (response.status === 403) {
+            throw new Error('Access denied. You do not have permission to view these players. Please log in with admin credentials or contact support.');
+          }
           throw new Error(`Failed to fetch players: ${errorText}`);
         }
         
@@ -92,7 +98,6 @@ export default function PlayersPage() {
         console.log('📦 Raw API Data:', data);
         console.log(`📊 Number of players received: ${data.length}`);
 
-        // Map backend data to match interface
         const mappedPlayers = data.map((player: any, index: number) => {
           console.log(`👤 Processing Player ${index + 1}:`, {
             id: player.id,
@@ -102,7 +107,6 @@ export default function PlayersPage() {
             imageType: player.imageType || 'Unknown',
           });
 
-          // Calculate age from DOB
           let calculatedAge = null;
           if (player.dob) {
             try {
@@ -117,11 +121,10 @@ export default function PlayersPage() {
 
           return {
             id: player.id,
-            firstname: player.firstname,
-            lastname: player.lastname,
+            firstname: player.firstname || '',
+            lastname: player.lastname || '',
             age: calculatedAge,
             sport: player.typeOfSportCategory || 'Unknown',
-            // Use the imageBase64 directly from backend (it's already in data URI format)
             image: player.imageBase64 || null,
             position: player.typeOfSportCategory || 'Player',
             experience: getExperienceForSport(player.typeOfSportCategory),
@@ -129,13 +132,13 @@ export default function PlayersPage() {
             status: player.sold ? 'inactive' : 'active',
             joinDate: player.dob || new Date().toISOString().split('T')[0],
             matches: Math.floor(Math.random() * 50),
-            goals: Math.floor(Math.random() * 20), 
-            auctionId: player.auctionId,
+            goals: Math.floor(Math.random() * 20),
+            auctionId: player.auctionId || 0,
           };
         });
 
         console.log('✅ Mapped Players:', mappedPlayers);
-        console.log(`🖼️  Players with images: ${mappedPlayers.filter(p => p.image).length}`);
+        console.log(`🖼️ Players with images: ${mappedPlayers.filter(p => p.image).length}`);
         console.log(`🚫 Players without images: ${mappedPlayers.filter(p => !p.image).length}`);
 
         setPlayers(mappedPlayers);
@@ -150,7 +153,6 @@ export default function PlayersPage() {
     fetchPlayers();
   }, [auctionId, token]);
 
-  // Helper function to get experience based on sport
   const getExperienceForSport = (sport: string) => {
     const experiences = {
       'Football': '4-6 years',
@@ -162,24 +164,20 @@ export default function PlayersPage() {
     return experiences[sport as keyof typeof experiences] || '2-3 years';
   };
 
-  // Helper function to generate mock rating
   const generateMockRating = () => {
-    return Math.round((Math.random() * 2 + 3) * 10) / 10; // Rating between 3.0 and 5.0
+    return Math.round((Math.random() * 2 + 3) * 10) / 10;
   };
 
-  // Image error handler
   const handleImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>, playerName: string) => {
     console.error(`🖼️ Image load error for ${playerName}:`, event);
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
   };
 
-  // Image load success handler
   const handleImageLoad = (playerName: string) => {
     console.log(`✅ Image loaded successfully for ${playerName}`);
   };
 
-  // Filter and search players
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.firstname.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.lastname.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -189,7 +187,6 @@ export default function PlayersPage() {
     return matchesSearch && matchesSport && matchesStatus;
   });
 
-  // Sort players
   const sortedPlayers = [...filteredPlayers].sort((a, b) => {
     switch (sortBy) {
       case 'name':
@@ -229,7 +226,6 @@ export default function PlayersPage() {
     avgRating: players.length > 0 ? (players.reduce((sum, p) => sum + (p.rating || 0), 0) / players.length).toFixed(1) : '0.0'
   };
 
-  // Player Image Component with proper error handling
   const PlayerImage = ({ player, className }: { player: Player, className: string }) => {
     const [imageError, setImageError] = useState(false);
     const playerName = `${player.firstname} ${player.lastname}`;
@@ -264,6 +260,78 @@ export default function PlayersPage() {
     );
   };
 
+  // Add Player Form State
+  const [newPlayer, setNewPlayer] = useState({
+    firstname: '',
+    lastname: '',
+    dob: '',
+    typeOfSportCategory: '',
+    imageBase64: '',
+    imageType: '',
+    auctionId: auctionId ? parseInt(auctionId) : 0,
+  });
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addLoading, setAddLoading] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setNewPlayer({ ...newPlayer, [e.target.name]: e.target.value });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPlayer({
+          ...newPlayer,
+          imageBase64: (reader.result as string).split(',')[1], // Base64 without data URI prefix
+          imageType: file.type,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddPlayer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      setAddError('No authentication token available.');
+      return;
+    }
+    if (!newPlayer.firstname || !newPlayer.lastname || !newPlayer.dob || !newPlayer.typeOfSportCategory) {
+      setAddError('All fields are required.');
+      return;
+    }
+
+    setAddLoading(true);
+    setAddError(null);
+
+    try {
+      const response = await fetch('http://localhost:8080/players', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPlayer),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to add player: ${errorText}`);
+      }
+
+      // Success: Close modal and refetch players
+    //   setShowAddModal(false);
+      // Trigger refetch by resetting players temporarily or call fetchPlayers again (but since useEffect depends on token/auctionId, we can force a reload or add a dummy dep)
+      window.location.reload(); // Simple way to refetch; alternatively, call fetchPlayers() if you extract it.
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed flex items-center justify-center">
@@ -286,6 +354,7 @@ export default function PlayersPage() {
           >
             Retry
           </button>
+          <p className="text-gray-500 mt-2">If the issue persists, ensure you have the correct permissions or contact an administrator.</p>
         </div>
       </div>
     );
@@ -311,7 +380,7 @@ export default function PlayersPage() {
                 </div>
              
                 <button 
-                  onClick={() => setShowAddModal(true)}
+                  onClick={() => window.location.href = `/player/registration?auctionId=${auctionId}`}
                   className="mt-6 lg:mt-0 bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow-lg flex items-center space-x-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -555,22 +624,6 @@ export default function PlayersPage() {
               )}
             </div>
           </div>
-
-          {/* Add Player Modal - Placeholder */}
-          {showAddModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                <h3 className="text-xl font-bold mb-4">Add New Player</h3>
-                <p className="text-gray-600 mb-4">Player creation form would go here</p>
-                <button 
-                  onClick={() => setShowAddModal(false)} 
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
