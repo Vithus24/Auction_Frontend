@@ -1,15 +1,4 @@
-// src/models/types.ts
-export interface Player {
-  points: string;
-  id: string;
-  name: string;
-  role: string;
-  basePrice: number;
-  maxPrice: number;
-  picture?: string;
-  status: 'available' | 'sold' | 'unsold';
-  teamId?: string;
-}
+
 
 export interface Team {
   id: string;
@@ -84,4 +73,15 @@ export interface AuctionState {
   highestBid?: Bid;
   recentBids: Bid[];
   wheelSpinState: WheelSpinState;
+}
+
+// src/models/types.ts
+export interface Player {
+  id: number;
+  name: string;
+  role: string;
+  basePrice: number;
+  picture: string;
+  status: 'available' | 'sold' | 'unsold';
+  team?: Team | null;
 }
