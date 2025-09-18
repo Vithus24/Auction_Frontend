@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Hammer, LogIn, Sun, Moon, Clock } from "lucide-react";
 
+// Job type
 interface Job {
   title: string;
   price: string;
@@ -10,6 +13,7 @@ interface Job {
   type: string;
 }
 
+// Sample jobs
 const jobs: Job[] = [
   { title: "Senior React Developer", price: "$95,000", time: "3d 22h", image: "💻", type: "Full-time" },
   { title: "Logo Design Project", price: "$450", time: "2d 8h", image: "🎨", type: "Freelance" },
@@ -19,34 +23,42 @@ const jobs: Job[] = [
   { title: "Social Media Manager", price: "$42,000", time: "2d 18h", image: "📢", type: "Part-time" },
 ];
 
-const JobNavbar = ({ getThemeClasses, theme, toggleTheme, navigateToPage }: any) => (
-  <nav className={`fixed w-full z-50 ${getThemeClasses('bg-black/90 backdrop-blur-lg shadow-2xl', 'bg-white/90 backdrop-blur-lg shadow-2xl')}`}>
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center py-4">
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigateToPage('home')}>
-          <div className={`w-10 h-10 ${getThemeClasses('bg-gradient-to-r from-purple-500 to-blue-500', 'bg-gradient-to-r from-purple-300 to-blue-300')} rounded-xl flex items-center justify-center`}>
-            <Hammer className={`w-6 h-6 ${getThemeClasses('text-white', 'text-black')}`} />
+const JobNavbar = ({ theme, toggleTheme, getThemeClasses }: any) => {
+  const router = useRouter();
+  const navigateToPage = (page: string) => {
+    if (page === "home") router.push("/");
+  };
+
+  return (
+    <nav className={`fixed w-full z-50 ${getThemeClasses('bg-black/90 backdrop-blur-lg shadow-2xl', 'bg-white/90 backdrop-blur-lg shadow-2xl')}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-4">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigateToPage('home')}>
+            <div className={`w-10 h-10 ${getThemeClasses('bg-gradient-to-r from-purple-500 to-blue-500', 'bg-gradient-to-r from-purple-300 to-blue-300')} rounded-xl flex items-center justify-center`}>
+              <Hammer className={`w-6 h-6 ${getThemeClasses('text-white', 'text-black')}`} />
+            </div>
+            <span className={`text-xl font-bold ${getThemeClasses('bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent', 'bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent')}`}>
+              AuctionHub Jobs
+            </span>
           </div>
-          <span className={`text-xl font-bold ${getThemeClasses('bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent', 'bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent')}`}>
-            AuctionHub Jobs
-          </span>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button onClick={() => navigateToPage('home')} className={`${getThemeClasses('bg-gradient-to-r from-purple-600 to-blue-600', 'bg-gradient-to-r from-purple-400 to-blue-400')} px-4 py-2 rounded-lg hover:shadow-lg transition-all ${getThemeClasses('text-white', 'text-black')}`}>
-            Back to Home
-          </button>
-          <button className={`${getThemeClasses('bg-gradient-to-r from-purple-600 to-blue-600', 'bg-gradient-to-r from-purple-400 to-blue-400')} px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1 ${getThemeClasses('text-white', 'text-black')}`}>
-            <LogIn className="w-4 h-4" />
-            <span>Login/Register</span>
-          </button>
-          <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-700/50">
-            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+
+          <div className="flex items-center space-x-4">
+            <button onClick={() => navigateToPage('home')} className={`${getThemeClasses('bg-gradient-to-r from-purple-600 to-blue-600', 'bg-gradient-to-r from-purple-400 to-blue-400')} px-4 py-2 rounded-lg hover:shadow-lg transition-all ${getThemeClasses('text-white', 'text-black')}`}>
+              Back to Home
+            </button>
+            <button className={`${getThemeClasses('bg-gradient-to-r from-purple-600 to-blue-600', 'bg-gradient-to-r from-purple-400 to-blue-400')} px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center space-x-1 ${getThemeClasses('text-white', 'text-black')}`}>
+              <LogIn className="w-4 h-4" />
+              <span>Login/Register</span>
+            </button>
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-700/50">
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
-);
+    </nav>
+  );
+};
 
 const JobCard = ({ job, getThemeClasses }: { job: Job; getThemeClasses: any }) => (
   <div className={`${getThemeClasses('bg-purple-900/30 backdrop-blur-sm border border-purple-500/30 hover:border-blue-400/50', 'bg-purple-100/30 backdrop-blur-sm border border-purple-300/30 hover:border-blue-600/50')} rounded-2xl p-6 transition-all`}>
@@ -90,14 +102,18 @@ const JobFeatures = ({ getThemeClasses }: any) => (
   </section>
 );
 
-export default function JobLandingPage({ getThemeClasses, theme, toggleTheme, navigateToPage }: any) {
+export default function JobLandingPage() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const toggleTheme = () => setTheme(prev => (prev === "light" ? "dark" : "light"));
+
+  const getThemeClasses = (darkClass: string, lightClass: string) => (theme === "dark" ? darkClass : lightClass);
+
   return (
     <div className={`min-h-screen ${getThemeClasses('bg-gradient-to-br from-purple-900 via-blue-900 to-slate-900 text-white', 'bg-gradient-to-br from-purple-100 via-blue-100 to-gray-100 text-black')}`}>
-      <JobNavbar getThemeClasses={getThemeClasses} theme={theme} toggleTheme={toggleTheme} navigateToPage={navigateToPage} />
+      <JobNavbar theme={theme} toggleTheme={toggleTheme} getThemeClasses={getThemeClasses} />
 
       <div className="pt-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold mb-4">
               <span className={`${getThemeClasses('bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent', 'bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent')}`}>
