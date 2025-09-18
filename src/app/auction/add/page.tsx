@@ -119,10 +119,10 @@ const AuctionRegistration = () => {
         }),
       })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(errorText || 'Failed to create auction')
-      }
+      // if (!response.ok) {
+      //   const errorText = await response.text()
+      //   throw new Error(errorText || 'Failed to create auction')
+      // }
 
       setIsSuccess(true)
       
