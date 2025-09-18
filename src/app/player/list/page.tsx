@@ -20,7 +20,13 @@ import {
   Star,
   Award,
   Activity,
-  Link
+  Link,
+  X,
+  Mail,
+  Phone,
+  Shirt,
+  CheckCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import useAuthToken from '@/lib/hooks/useAuthToken';
@@ -42,6 +48,22 @@ interface Player {
   auctionId: number;
 }
 
+interface PlayerDetail {
+  id: number;
+  firstname: string | null;
+  lastname: string | null;
+  mobileno: string | null;
+  email: string | null;
+  dob: string | null;
+  tshirtSize: string | null;
+  bottomSize: string | null;
+  typeOfSportCategory: string | null;
+  sold: boolean;
+  auctionId: number | null;
+  imageBase64: string | null;
+  imageType: string | null;
+}
+
 const sportCategories = ["All Sports", "Football", "Basketball", "Tennis", "Cricket", "Volleyball"];
 const DEFAULT_ICON = '/api/placeholder/150/150';
 
@@ -52,9 +74,31 @@ export default function PlayersPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('name');
-//   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view');
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerDetail | null>(null);
+  const [editPlayer, setEditPlayer] = useState<PlayerDetail>({
+    id: 0,
+    firstname: null,
+    lastname: null,
+    mobileno: null,
+    email: null,
+    dob: null,
+    tshirtSize: null,
+    bottomSize: null,
+    typeOfSportCategory: null,
+    sold: false,
+    auctionId: null,
+    imageBase64: null,
+    imageType: null,
+  });
+  const [addError, setAddError] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const searchParams = useSearchParams();
   const { token } = useAuthToken();
 
@@ -68,10 +112,10 @@ export default function PlayersPage() {
         setLoading(false);
         return;
       }
-      if (!token) return; // Skip if no token yet
+      if (!token) return;
 
       setLoading(true);
-      setError(null); // Clear previous error
+      setError(null);
 
       try {
         console.log(`🔄 Fetching players for auction ID: ${auctionId}`);
@@ -138,8 +182,8 @@ export default function PlayersPage() {
         });
 
         console.log('✅ Mapped Players:', mappedPlayers);
-        console.log(`🖼️ Players with images: ${mappedPlayers.filter(p => p.image).length}`);
-        console.log(`🚫 Players without images: ${mappedPlayers.filter(p => !p.image).length}`);
+        console.log(`🖼️ Players with images: ${mappedPlayers.filter((p: { image: any; }) => p.image).length}`);
+        console.log(`🚫 Players without images: ${mappedPlayers.filter((p: { image: any; }) => !p.image).length}`);
 
         setPlayers(mappedPlayers);
       } catch (err) {
@@ -152,6 +196,109 @@ export default function PlayersPage() {
 
     fetchPlayers();
   }, [auctionId, token]);
+
+  // Fetch player details for modal
+  const fetchPlayerDetails = async (id: number) => {
+    if (!token) return;
+    try {
+      setEditLoading(true);
+      const response = await fetch(`http://localhost:8080/players/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch player details');
+      }
+      const data = await response.json();
+      setSelectedPlayer(data);
+      setEditPlayer(data);
+      setModalOpen(true);
+    } catch (err) {
+      console.error('💥 Fetch Player Details Error:', err);
+      setAddError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handle edit submission
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !editPlayer) return;
+    setEditLoading(true);
+    setAddError(null);
+
+    try {
+      const response = await fetch(`http://localhost:8080/players/${editPlayer.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editPlayer),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update player');
+      }
+
+      setModalOpen(false);
+      window.location.reload(); // Refetch to update UI
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handle delete player
+  const handleDeletePlayer = async () => {
+    if (!token || !playerToDelete) return;
+    setDeleteLoading(true);
+
+    try {
+      const response = await fetch(`http://localhost:8080/players/${playerToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete player');
+      }
+
+      setDeleteModalOpen(false);
+      setPlayerToDelete(null);
+      // Remove player from local state
+      setPlayers(prev => prev.filter(p => p.id !== playerToDelete.id));
+    } catch (err) {
+      console.error('💥 Delete Error:', err);
+      setAddError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Image upload handler
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setEditPlayer(prev => ({
+          ...prev,
+          imageBase64: result.split(',')[1], // Base64 without data URI prefix
+          imageType: file.type,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const getExperienceForSport = (sport: string) => {
     const experiences = {
@@ -260,76 +407,28 @@ export default function PlayersPage() {
     );
   };
 
-  // Add Player Form State
-  const [newPlayer, setNewPlayer] = useState({
-    firstname: '',
-    lastname: '',
-    dob: '',
-    typeOfSportCategory: '',
-    imageBase64: '',
-    imageType: '',
-    auctionId: auctionId ? parseInt(auctionId) : 0,
-  });
-  const [addError, setAddError] = useState<string | null>(null);
-  const [addLoading, setAddLoading] = useState(false);
+  const ModalPlayerImage = ({ player }: { player: PlayerDetail }) => {
+    const [imageError, setImageError] = useState(false);
+    const playerName = `${player.firstname || 'Unknown'} ${player.lastname || ''}`;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setNewPlayer({ ...newPlayer, [e.target.name]: e.target.value });
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewPlayer({
-          ...newPlayer,
-          imageBase64: (reader.result as string).split(',')[1], // Base64 without data URI prefix
-          imageType: file.type,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAddPlayer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) {
-      setAddError('No authentication token available.');
-      return;
-    }
-    if (!newPlayer.firstname || !newPlayer.lastname || !newPlayer.dob || !newPlayer.typeOfSportCategory) {
-      setAddError('All fields are required.');
-      return;
+    if (!player.imageBase64 || imageError) {
+      return (
+        <div className="w-full h-64 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center shadow-lg">
+          <User className="w-24 h-24 text-indigo-600" />
+        </div>
+      );
     }
 
-    setAddLoading(true);
-    setAddError(null);
-
-    try {
-      const response = await fetch('http://localhost:8080/players', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newPlayer),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to add player: ${errorText}`);
-      }
-
-      // Success: Close modal and refetch players
-    //   setShowAddModal(false);
-      // Trigger refetch by resetting players temporarily or call fetchPlayers again (but since useEffect depends on token/auctionId, we can force a reload or add a dummy dep)
-      window.location.reload(); // Simple way to refetch; alternatively, call fetchPlayers() if you extract it.
-    } catch (err) {
-      setAddError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setAddLoading(false);
-    }
+    return (
+      <div className="w-full h-64 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl shadow-lg overflow-hidden">
+        <img 
+          src={player.imageBase64}
+          alt={playerName}
+          className="w-full h-full object-cover"
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
   };
 
   if (loading) {
@@ -603,15 +702,27 @@ export default function PlayersPage() {
 
                           {/* Action Buttons */}
                           <div className={`flex ${viewMode === 'list' ? 'flex-row space-x-2' : 'flex-wrap gap-2 justify-center'}`}>
-                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1">
+                            <button 
+                              onClick={() => { setModalMode('view'); fetchPlayerDetails(player.id); }}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
+                            >
                               <Eye className="w-4 h-4" />
                               {viewMode === 'grid' && <span>View</span>}
                             </button>
-                            <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1">
+                            <button 
+                              onClick={() => { setModalMode('edit'); fetchPlayerDetails(player.id); }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
+                            >
                               <Edit className="w-4 h-4" />
                               {viewMode === 'grid' && <span>Edit</span>}
                             </button>
-                            <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1">
+                            <button 
+                              onClick={() => {
+                                setPlayerToDelete(player);
+                                setDeleteModalOpen(true);
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer"
+                            >
                               <Trash2 className="w-4 h-4" />
                               {viewMode === 'grid' && <span>Delete</span>}
                             </button>
@@ -624,8 +735,439 @@ export default function PlayersPage() {
               )}
             </div>
           </div>
+
+          {/* Modern View/Edit Modal */}
+          {modalOpen && selectedPlayer && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6 text-white relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold flex items-center">
+                        {modalMode === 'view' ? (
+                          <>
+                            <Eye className="w-6 h-6 mr-3" />
+                            Player Details
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="w-6 h-6 mr-3" />
+                            Edit Player
+                          </>
+                        )}
+                      </h2>
+                      <p className="text-indigo-100 mt-1">
+                        {selectedPlayer.firstname} {selectedPlayer.lastname}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setModalOpen(false);
+                        setAddError(null);
+                      }}
+                      className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Modal Content */}
+                <div className="max-h-[calc(90vh-100px)] overflow-y-auto">
+                  <div className="p-8">
+                    {/* Player Image Section */}
+                    <div className="mb-8">
+                      <div className="flex justify-center">
+                        <div className="relative">
+                          <ModalPlayerImage player={selectedPlayer} />
+                          {selectedPlayer.sold && (
+                            <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Sold
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {addError && (
+                      <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+                        <AlertTriangle className="w-5 h-5 text-red-500 mr-3" />
+                        <p className="text-red-700">{addError}</p>
+                      </div>
+                    )}
+
+                    {modalMode === 'view' ? (
+                      /* View Mode */
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                          <div className="bg-gray-50 rounded-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                              <User className="w-5 h-5 mr-2" />
+                              Personal Information
+                            </h3>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Full Name</label>
+                                <p className="text-lg font-medium text-gray-900">
+                                  {selectedPlayer.firstname || 'N/A'} {selectedPlayer.lastname || ''}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Date of Birth</label>
+                                <p className="text-gray-900 flex items-center">
+                                  <Calendar className="w-4 h-4 mr-2" />
+                                  {selectedPlayer.dob || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-gray-50 rounded-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                              <Phone className="w-5 h-5 mr-2" />
+                              Contact Information
+                            </h3>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Mobile Number</label>
+                                <p className="text-gray-900 flex items-center">
+                                  <Phone className="w-4 h-4 mr-2" />
+                                  {selectedPlayer.mobileno || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Email Address</label>
+                                <p className="text-gray-900 flex items-center">
+                                  <Mail className="w-4 h-4 mr-2" />
+                                  {selectedPlayer.email || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="bg-gray-50 rounded-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                              <Trophy className="w-5 h-5 mr-2" />
+                              Sports Information
+                            </h3>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Sport Category</label>
+                                <p className="text-gray-900">
+                                  {selectedPlayer.typeOfSportCategory || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Status</label>
+                                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                  selectedPlayer.sold 
+                                    ? 'bg-red-100 text-red-800' 
+                                    : 'bg-green-100 text-green-800'
+                                }`}>
+                                  {selectedPlayer.sold ? 'Sold' : 'Available'}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Auction ID</label>
+                                <p className="text-gray-900">{selectedPlayer.auctionId || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-gray-50 rounded-lg p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                              <Shirt className="w-5 h-5 mr-2" />
+                              Clothing Sizes
+                            </h3>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">T-Shirt Size</label>
+                                <p className="text-gray-900">{selectedPlayer.tshirtSize || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Bottom Size</label>
+                                <p className="text-gray-900">{selectedPlayer.bottomSize || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Edit Mode */
+                      <form onSubmit={handleEditSubmit} className="space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          <div className="space-y-6">
+                            <div className="bg-gray-50 rounded-lg p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <User className="w-5 h-5 mr-2" />
+                                Personal Information
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    First Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editPlayer.firstname || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, firstname: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="Enter first name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Last Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editPlayer.lastname || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, lastname: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="Enter last name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Date of Birth
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={editPlayer.dob || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, dob: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <Phone className="w-5 h-5 mr-2" />
+                                Contact Information
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Mobile Number
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    value={editPlayer.mobileno || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, mobileno: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="Enter mobile number"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email Address
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={editPlayer.email || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, email: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="Enter email address"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-6">
+                            <div className="bg-gray-50 rounded-lg p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <Trophy className="w-5 h-5 mr-2" />
+                                Sports Information
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Sport Category
+                                  </label>
+                                  <select
+                                    value={editPlayer.typeOfSportCategory || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, typeOfSportCategory: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                  >
+                                    <option value="">Select Sport</option>
+                                    {sportCategories.filter(s => s !== 'All Sports').map(sport => (
+                                      <option key={sport} value={sport}>{sport}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id="sold"
+                                    checked={editPlayer.sold}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, sold: e.target.checked })}
+                                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded "
+                                  />
+                                  <label htmlFor="sold" className="ml-3 text-sm font-medium text-gray-700">
+                                    Player is sold
+                                  </label>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Auction ID
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={editPlayer.auctionId || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, auctionId: parseInt(e.target.value) || null })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="Enter auction ID"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-6">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <Shirt className="w-5 h-5 mr-2" />
+                                Clothing Sizes & Image
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    T-Shirt Size
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editPlayer.tshirtSize || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, tshirtSize: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="e.g., S, M, L, XL"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bottom Size
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editPlayer.bottomSize || ''}
+                                    onChange={(e) => setEditPlayer({ ...editPlayer, bottomSize: e.target.value })}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                    placeholder="e.g., S, M, L, XL"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Update Player Image
+                                  </label>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700"
+                                  />
+                                  {editPlayer.imageBase64 && (
+                                    <div className="mt-3">
+                                      <img 
+                                        src={`data:${editPlayer.imageType || 'image/jpeg'};base64,${editPlayer.imageBase64}`}
+                                        alt="Preview" 
+                                        className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Form Actions */}
+                        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setModalOpen(false);
+                              setAddError(null);
+                            }}
+                            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            type="submit"
+                            disabled={editLoading}
+                            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center"
+                          >
+                            {editLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deleteModalOpen && playerToDelete && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+                <div className="p-6">
+                  <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
+                    <AlertTriangle className="w-8 h-8 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Delete Player</h3>
+                  <p className="text-gray-600 text-center mb-6">
+                    Are you sure you want to delete <strong>{playerToDelete.firstname} {playerToDelete.lastname}</strong>? 
+                    This action cannot be undone.
+                  </p>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => {
+                        setDeleteModalOpen(false);
+                        setPlayerToDelete(null);
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDeletePlayer}
+                      disabled={deleteLoading}
+                      className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center"
+                    >
+                      {deleteLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Player
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </div> 
     </div>
   );
 }

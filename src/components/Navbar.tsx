@@ -48,7 +48,7 @@ export default function Navbar() {
 
   const navItems = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'My Auctions', href: '/auctions', icon: Gavel },
+    { name: 'My Auctions', href: '/auction/dashboard', icon: Gavel },
     { name: 'FAQs', href: '/faqs', icon: HelpCircle },
   ];
 
