@@ -1,10 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Calendar, Target, DollarSign, Award } from 'lucide-react'
+import { Calendar, Target, DollarSign, Award, AlertTriangle } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import useAuthToken from '../../../lib/hooks/useAuthToken'
 import useUserData from '@/lib/hooks/useUserData'
+import { useRouter } from 'next/navigation'
+
 
 interface AuctionFormData {
   auctionName: string
@@ -12,7 +14,8 @@ interface AuctionFormData {
   typeOfSport: string
   bidIncreaseBy: string
   minimumBid: string
-  pointsPerTeamPlayerPerTeam: string
+  pointsPerTeam: string
+  playerPerTeam: string
 }
 
 const AuctionRegistration = () => {
@@ -22,14 +25,15 @@ const AuctionRegistration = () => {
     typeOfSport: '',
     bidIncreaseBy: '',
     minimumBid: '',
-    pointsPerTeamPlayerPerTeam: '',
+    pointsPerTeam: '',
+    playerPerTeam: '',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Partial<AuctionFormData>>({})
   const { token } = useAuthToken()
-  const { userId } = useUserData();
+  const { userId } = useUserData()
   const sportCategories = [
     'Cricket',
     'Football',
@@ -72,15 +76,22 @@ const AuctionRegistration = () => {
     } else if (isNaN(Number(formData.minimumBid)) || Number(formData.minimumBid) <= 0) {
       newErrors.minimumBid = 'Please enter a valid positive number'
     }
-    if (!formData.pointsPerTeamPlayerPerTeam.trim()) {
-      newErrors.pointsPerTeamPlayerPerTeam = 'Points per team player is required'
-    } else if (isNaN(Number(formData.pointsPerTeamPlayerPerTeam)) || Number(formData.pointsPerTeamPlayerPerTeam) <= 0) {
-      newErrors.pointsPerTeamPlayerPerTeam = 'Please enter a valid positive number'
+    if (!formData.pointsPerTeam.trim()) {
+      newErrors.pointsPerTeam = 'Points per team player is required'
+    } else if (isNaN(Number(formData.pointsPerTeam)) || Number(formData.pointsPerTeam) <= 0) {
+      newErrors.pointsPerTeam = 'Please enter a valid positive number'
+    }
+    if (!formData.playerPerTeam.trim()) {
+      newErrors.playerPerTeam = 'Number of players per team is required'
+    } else if (isNaN(Number(formData.playerPerTeam)) || Number(formData.playerPerTeam) <= 0) {
+      newErrors.playerPerTeam = 'Please enter a valid positive number'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
+  const router = useRouter()
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,27 +113,29 @@ const AuctionRegistration = () => {
           typeOfSport: formData.typeOfSport,
           bidIncreaseBy: Number(formData.bidIncreaseBy),
           minimumBid: Number(formData.minimumBid),
-          pointsPerTeam: Number(formData.pointsPerTeamPlayerPerTeam), // Renamed to match backend
-          playerPerTeam: 11, // Default value; adjust as needed
-          status: 'OPEN', // Default status
+          pointsPerTeam: Number(formData.pointsPerTeam),
+          playerPerTeam: Number(formData.playerPerTeam),
+          status: 'OPEN',
         }),
       })
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to create auction');
+        const errorText = await response.text()
+        throw new Error(errorText || 'Failed to create auction')
       }
 
       setIsSuccess(true)
       
       setTimeout(() => {
+        router.push('/auction/dashboard')
         setFormData({
           auctionName: '',
           auctionDate: '',
           typeOfSport: '',
           bidIncreaseBy: '',
           minimumBid: '',
-          pointsPerTeamPlayerPerTeam: '',
+          pointsPerTeam: '',
+          playerPerTeam: '',
         })
         setIsSuccess(false)
       }, 3000)
@@ -155,11 +168,10 @@ const AuctionRegistration = () => {
   }
 
   return (
-    <div className='bg-[url(/bg1.jpg)] bg-cover bg-center bg-custom bg-cover bg-center'>
+    <div className='bg-[url(/bg1.jpg)] bg-custom bg-cover bg-center'>
       <Navbar />
       <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          {/* Header */}
           <div className="bg-white rounded-lg shadow-sm border mb-8">
             <div className="px-8 py-6 border-b border-gray-200 text-center">
               <h1 className="text-4xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-red-400 bg-clip-text text-transparent">Auction Registration</h1>
@@ -168,8 +180,6 @@ const AuctionRegistration = () => {
               </p>
             </div>
           </div>
-
-          {/* Registration Form */}
           <div className="bg-white rounded-lg shadow-sm border">
             <form onSubmit={handleSubmit} className="p-8 space-y-8">
               
@@ -227,8 +237,6 @@ const AuctionRegistration = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Bidding Rules */}
               <div className="space-y-6">
                 <div className="flex items-center pb-4 border-b border-gray-200">
                   <Target className="w-5 h-5 text-gray-500 mr-3" />
@@ -315,32 +323,57 @@ const AuctionRegistration = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="pointsPerTeamPlayerPerTeam" className="block text-sm font-medium text-gray-700 mb-2">
-                      Points per Team Player <span className="text-red-500">*</span>
+                    <label htmlFor="pointsPerTeam" className="block text-sm font-medium text-gray-700 mb-2">
+                      Points per Team <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
-                      id="pointsPerTeamPlayerPerTeam"
-                      name="pointsPerTeamPlayerPerTeam"
-                      value={formData.pointsPerTeamPlayerPerTeam}
+                      id="pointsPerTeam"
+                      name="pointsPerTeam"
+                      value={formData.pointsPerTeam}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.pointsPerTeamPlayerPerTeam ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
+                        errors.pointsPerTeam ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
                       }`}
                       placeholder="Enter points per player"
                       step="0.01"
                     />
-                    {errors.pointsPerTeamPlayerPerTeam && (
+                    {errors.pointsPerTeam && (
                       <div className="mt-2 flex items-center text-sm text-red-600">
                         <AlertTriangle className="w-4 h-4 mr-1" />
-                        {errors.pointsPerTeamPlayerPerTeam}
+                        {errors.pointsPerTeam}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="playerPerTeam" className="block text-sm font-medium text-gray-700 mb-2">
+                      Players per Team <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      id="playerPerTeam"
+                      name="playerPerTeam"
+                      value={formData.playerPerTeam}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                        errors.playerPerTeam ? 'border-red-300 bg-red-50' : 'border-gray-300 text-gray-700'
+                      }`}
+                      placeholder="Enter number of players"
+                      step="1"
+                      min="1"
+                    />
+                    {errors.playerPerTeam && (
+                      <div className="mt-2 flex items-center text-sm text-red-600">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        {errors.playerPerTeam}
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-
-              {/* Submit Button */}
               <div className="flex justify-end pt-6 border-t border-gray-200">
                 <button
                   type="submit"

@@ -22,87 +22,102 @@ import {
   AlertCircle,
   BarChart3
 } from 'lucide-react';
-
-// Mock data - replace with your API calls
-const mockAuctions = [
-  {
-    id: 1,
-    name: "Premier League 2024",
-    date: "2024-03-25",
-    time: "14:00",
-    status: "upcoming",
-    totalPlayers: 156,
-    totalTeams: 8,
-    budget: 50000,
-    registered: 145,
-    description: "Annual premier league auction"
-  },
-  {
-    id: 2,
-    name: "Champions Cup",
-    date: "2024-03-20",
-    time: "16:30",
-    status: "live",
-    totalPlayers: 89,
-    totalTeams: 6,
-    budget: 75000,
-    registered: 89,
-    description: "Elite champions tournament"
-  },
-  {
-    id: 3,
-    name: "Summer League",
-    date: "2024-03-15",
-    time: "18:00",
-    status: "completed",
-    totalPlayers: 120,
-    totalTeams: 10,
-    budget: 60000,
-    registered: 120,
-    description: "Completed summer tournament"
-  }
-];
+import { useRouter } from 'next/navigation';
+import useUserData from '@/lib/hooks/useUserData'; // Adjust the import path as needed
+import useAuthToken from '@/lib/hooks/useAuthToken';
 
 export default function AuctionDashboard() {
-  const [auctions, setAuctions] = useState(mockAuctions);
+  const [auctions, setAuctions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { userId } = useUserData();
+  const { token } = useAuthToken();
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:8080/auctions/admin/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token || ''}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch auctions');
+        }
+        const data = await response.json();
+        setAuctions(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchAuctions();
+    }
+  }, [userId, token]);
 
   // Filter auctions based on search and status
   const filteredAuctions = auctions.filter(auction => {
-    const matchesSearch = auction.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || auction.status === filterStatus;
+    const matchesSearch = auction.auctionName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || auction.status.toLowerCase() === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   // Calculate stats
   const stats = {
     total: auctions.length,
-    upcoming: auctions.filter(a => a.status === 'upcoming').length,
-    live: auctions.filter(a => a.status === 'live').length,
-    completed: auctions.filter(a => a.status === 'completed').length,
-    totalPlayers: auctions.reduce((sum, a) => sum + a.totalPlayers, 0),
-    totalRevenue: auctions.reduce((sum, a) => sum + a.budget, 0)
+    upcoming: auctions.filter(a => a.status.toLowerCase() === 'upcoming').length,
+    live: auctions.filter(a => a.status.toLowerCase() === 'live').length,
+    completed: auctions.filter(a => a.status.toLowerCase() === 'completed').length,
+    totalPlayers: auctions.reduce((sum, a) => sum + a.playerPerTeam, 0),
+    totalRevenue: auctions.reduce((sum, a) => sum + a.minimumBid || 0, 0),
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'upcoming': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'live': return 'bg-green-100 text-green-800 border-green-200';
-      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'open': case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'upcoming': return <Clock className="w-4 h-4" />;
       case 'live': return <Activity className="w-4 h-4 animate-pulse" />;
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'open': case 'completed': return <CheckCircle className="w-4 h-4" />;
       default: return <AlertCircle className="w-4 h-4" />;
     }
   };
+
+  const handleCreateAuction = () => {
+    router.push('/auction/add');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-lg text-red-600">
+          Error: {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
@@ -110,8 +125,7 @@ export default function AuctionDashboard() {
       
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-          
-          {/* Dashboard Header */}
+        
           <div className="mb-8">
             <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-100">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -121,8 +135,9 @@ export default function AuctionDashboard() {
                   </h1>
                   <p className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent text-lg">Manage your auctions and track performance</p>
                 </div>
-                <button 
-                  onClick={() => setShowAddModal(true)}
+               
+                <button
+                  onClick={handleCreateAuction}
                   className="mt-6 lg:mt-0 bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-colors duration-200 shadow-lg flex items-center space-x-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -134,78 +149,72 @@ export default function AuctionDashboard() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-  {/* Total Auctions */}
-  <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-xl p-6 shadow-lg border border-rose-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <Calendar className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-2xl font-bold text-rose-900">{stats.total}</span>
-    </div>
-    <p className="text-rose-700 font-medium">Total Auctions</p>
-    <p className="text-sm text-rose-500 mt-1">All time</p>
-  </div>
+            <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-xl p-6 shadow-lg border border-rose-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-rose-500 to-pink-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-rose-900">{stats.total}</span>
+              </div>
+              <p className="text-rose-700 font-medium">Total Auctions</p>
+              <p className="text-sm text-rose-500 mt-1">All time</p>
+            </div>
 
-  {/* Upcoming */}
-  <div className="bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl p-6 shadow-lg border border-cyan-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <Clock className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-2xl font-bold text-cyan-900">{stats.upcoming}</span>
-    </div>
-    <p className="text-cyan-700 font-medium">Upcoming</p>
-    <p className="text-sm text-cyan-500 mt-1">Scheduled</p>
-  </div>
+            <div className="bg-gradient-to-br from-cyan-50 to-blue-100 rounded-xl p-6 shadow-lg border border-cyan-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-cyan-900">{stats.upcoming}</span>
+              </div>
+              <p className="text-cyan-700 font-medium">Upcoming</p>
+              <p className="text-sm text-cyan-500 mt-1">Scheduled</p>
+            </div>
 
-  {/* Live Now */}
-  <div className="bg-gradient-to-br from-teal-50 to-emerald-100 rounded-xl p-6 shadow-lg border border-teal-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <Activity className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-2xl font-bold text-teal-900">{stats.live}</span>
-    </div>
-    <p className="text-teal-700 font-medium">Live Now</p>
-    <p className="text-sm text-teal-500 mt-1 font-semibold">Active</p>
-  </div>
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-100 rounded-xl p-6 shadow-lg border border-teal-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-teal-900">{stats.live}</span>
+              </div>
+              <p className="text-teal-700 font-medium">Live Now</p>
+              <p className="text-sm text-teal-500 mt-1 font-semibold">Active</p>
+            </div>
 
-  {/* Completed */}
-  <div className="bg-gradient-to-br from-purple-50 to-indigo-100 rounded-xl p-6 shadow-lg border border-purple-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <CheckCircle className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-2xl font-bold text-purple-900">{stats.completed}</span>
-    </div>
-    <p className="text-purple-700 font-medium">Completed</p>
-    <p className="text-sm text-purple-500 mt-1">Finished</p>
-  </div>
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-100 rounded-xl p-6 shadow-lg border border-purple-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-purple-900">{stats.completed}</span>
+              </div>
+              <p className="text-purple-700 font-medium">Completed</p>
+              <p className="text-sm text-purple-500 mt-1">Finished</p>
+            </div>
 
-  {/* Total Players */}
-  <div className="bg-gradient-to-br from-orange-50 to-yellow-100 rounded-xl p-6 shadow-lg border border-orange-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <Users className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-2xl font-bold text-orange-900">{stats.totalPlayers}</span>
-    </div>
-    <p className="text-orange-700 font-medium">Total Players</p>
-    <p className="text-sm text-orange-500 mt-1">Registered</p>
-  </div>
+            <div className="bg-gradient-to-br from-orange-50 to-yellow-100 rounded-xl p-6 shadow-lg border border-orange-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-orange-900">{stats.totalPlayers}</span>
+              </div>
+              <p className="text-orange-700 font-medium">Total Players</p>
+              <p className="text-sm text-orange-500 mt-1">Registered</p>
+            </div>
 
-  {/* Total Budget */}
-  <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-6 shadow-lg border border-emerald-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
-        <DollarSign className="w-6 h-6 text-white" />
-      </div>
-      <span className="text-xl font-bold text-emerald-900">${stats.totalRevenue.toLocaleString()}</span>
-    </div>
-    <p className="text-emerald-700 font-medium">Total Budget</p>
-    <p className="text-sm text-emerald-500 mt-1">Combined</p>
-  </div>
-</div>
+            <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-6 shadow-lg border border-emerald-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-xl font-bold text-emerald-900">${stats.totalRevenue.toLocaleString()}</span>
+              </div>
+              <p className="text-emerald-700 font-medium">Total Budget</p>
+              <p className="text-sm text-emerald-500 mt-1">Combined</p>
+            </div>
+          </div>
 
           {/* Search and Filter Section */}
           <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 mb-8">
@@ -261,15 +270,15 @@ export default function AuctionDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-4 mb-4">
                             <h3 className="text-xl font-bold text-gray-900">
-                              {auction.name}
+                              {auction.auctionName}
                             </h3>
                             <div className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center space-x-1 ${getStatusColor(auction.status)}`}>
                               {getStatusIcon(auction.status)}
-                              <span className="capitalize">{auction.status}</span>
+                              <span className="capitalize">{auction.status.toLowerCase()}</span>
                             </div>
                           </div>
                           
-                          <p className="text-gray-600 mb-6 text-lg">{auction.description}</p>
+                          <p className="text-gray-600 mb-6 text-lg">{auction.description || 'No description available'}</p>
                           
                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                             <div className="flex items-center space-x-3">
@@ -278,7 +287,7 @@ export default function AuctionDashboard() {
                               </div>
                               <div>
                                 <p className="text-sm text-gray-500">Date</p>
-                                <p className="font-semibold text-gray-900">{auction.date}</p>
+                                <p className="font-semibold text-gray-900">{new Date(auction.auctionDate).toLocaleDateString()}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -287,7 +296,7 @@ export default function AuctionDashboard() {
                               </div>
                               <div>
                                 <p className="text-sm text-gray-500">Time</p>
-                                <p className="font-semibold text-gray-900">{auction.time}</p>
+                                <p className="font-semibold text-gray-900">{new Date(auction.auctionDate).toLocaleTimeString()}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -296,7 +305,7 @@ export default function AuctionDashboard() {
                               </div>
                               <div>
                                 <p className="text-sm text-gray-500">Players</p>
-                                <p className="font-semibold text-gray-900">{auction.totalPlayers}</p>
+                                <p className="font-semibold text-gray-900">{auction.playerPerTeam}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -305,7 +314,7 @@ export default function AuctionDashboard() {
                               </div>
                               <div>
                                 <p className="text-sm text-gray-500">Budget</p>
-                                <p className="font-semibold text-gray-900">${auction.budget.toLocaleString()}</p>
+                                <p className="font-semibold text-gray-900">${auction.minimumBid?.toLocaleString() || 'N/A'}</p>
                               </div>
                             </div>
                           </div>
@@ -313,23 +322,38 @@ export default function AuctionDashboard() {
                         
                         <div className="mt-8 xl:mt-0 xl:ml-8">
                           <div className="flex flex-wrap gap-3">
-                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button
+                              onClick={() => router.push('/player/registration')}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                            >
                               <Eye className="w-4 h-4" />
                               <span>View</span>
                             </button>
-                            <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button
+                              onClick={() => router.push('/auction/edit')}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                            >
                               <Edit className="w-4 h-4" />
                               <span>Edit</span>
                             </button>
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button
+                              onClick={() => router.push(`/player/list?auctionId=${auction.id}`)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                            >
                               <Users className="w-4 h-4" />
                               <span>Players</span>
                             </button>
-                            <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button
+                              onClick={() => router.push(`/team/registration?auctionId=${auction.id}`)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                            >
                               <Shield className="w-4 h-4" />
                               <span>Teams</span>
                             </button>
-                            <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button
+                              onClick={() => router.push('/auction/delete')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                            >
                               <Trash2 className="w-4 h-4" />
                               <span>Delete</span>
                             </button>
