@@ -1,601 +1,638 @@
-// src/pages/BidPage.tsx
-'use client';
+"use client";
 
-// import React, { useEffect, useState } from 'react';
-// import { useRouter, useSearchParams } from 'next/navigation';
-// import AuctionPage from '@/components/AuctionPage';
-// import { UserRole } from '@/models/types';
+import { Card, CardContent } from "@mui/material";
+import React, { useState, useEffect } from "react";
+const mockTeams = [
+  {
+    id: 1,
+    name: "B UNITED",
+    logo: "/team-logos/b-united.png",
+    playerCount: 1,
+    maxBudget: 63500000,
+    remainingBudget: 14000000,
+    currentBid: 77500000,
+  },
+  {
+    id: 2,
+    name: "META TITANS",
+    logo: "/team-logos/meta-titans.png",
+    playerCount: 1,
+    maxBudget: 76000000,
+    remainingBudget: 14000000,
+    currentBid: 90000000,
+  },
+  {
+    id: 3,
+    name: "MRB ROYALS",
+    logo: "/team-logos/mrb-royals.png",
+    playerCount: 1,
+    maxBudget: 76000000,
+    remainingBudget: 14000000,
+    currentBid: 90000000,
+  },
+  {
+    id: 4,
+    name: "MUNOT SMASHERS",
+    logo: "/team-logos/munot-smashers.png",
+    playerCount: 1,
+    maxBudget: 76000000,
+    remainingBudget: 14000000,
+    currentBid: 90000000,
+  },
+  {
+    id: 5,
+    name: "RAJPUTANA RANGERS",
+    logo: "/team-logos/rajputana-rangers.png",
+    playerCount: 1,
+    maxBudget: 71000000,
+    remainingBudget: 14000000,
+    currentBid: 85000000,
+  },
+  {
+    id: 6,
+    name: "REAL CMR ROYALS",
+    logo: "/team-logos/real-cmr-royals.png",
+    playerCount: 1,
+    maxBudget: 71000000,
+    remainingBudget: 14000000,
+    currentBid: 85000000,
+  },
+  {
+    id: 7,
+    name: "REVANT ROYALS",
+    logo: "/team-logos/revant-royals.png",
+    playerCount: 2,
+    maxBudget: 75400000,
+    remainingBudget: 13000000,
+    currentBid: 88400000,
+  },
+  {
+    id: 8,
+    name: "WARRIORS",
+    logo: "/team-logos/warriors.png",
+    playerCount: 1,
+    maxBudget: 76000000,
+    remainingBudget: 14000000,
+    currentBid: 90000000,
+  },
+];
 
-// const BidPage: React.FC = () => {
-//   const router = useRouter();
-//   const searchParams = useSearchParams();
-//   const auctionId = searchParams.get('auctionId');
-  
-//   const [userRole, setUserRole] = useState<UserRole | null>(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
+// Mock data for players
+const mockPlayers = [
+  {
+    id: 1,
+    name: "ARSHIL DOSHI",
+    role: "ALLROUNDER",
+    batting: "LBH",
+    bowling: "Right Arm Fast",
+    age: "17 Yrs",
+    photo: "/players/arshil-doshi.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "REAL CMR ROYALS",
+    soldPrice: 1500000,
+  },
+  {
+    id: 2,
+    name: "Abhi shah",
+    role: "BATSMAN",
+    batting: "RBH",
+    bowling: "Right Arm Fast",
+    age: "27 Yrs",
+    photo: "/players/abhi-shah.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 3,
+    name: "Abhishek mehta",
+    role: "BATSMAN",
+    batting: "RBH",
+    bowling: "",
+    age: "39 Yrs",
+    photo: "/players/abhishek-mehta.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 4,
+    name: "Ajit m shah",
+    role: "ALLROUNDER",
+    batting: "RBH",
+    bowling: "Right Arm Spin",
+    age: "36 Yrs",
+    photo: "/players/ajit-shah.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 5,
+    name: "Akash S sanghvi",
+    role: "ALLROUNDER",
+    batting: "RBH",
+    bowling: "Left Arm Fast",
+    age: "31 Yrs",
+    photo: "/players/akash-sanghvi.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 6,
+    name: "Amit Sanghvi",
+    role: "BATSMAN",
+    batting: "RBH",
+    bowling: "Right Arm Fast",
+    age: "41 Yrs",
+    photo: "/players/amit-sanghvi.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 7,
+    name: "Ankit Ramesh Sanghvi",
+    role: "ALLROUNDER",
+    batting: "LBH",
+    bowling: "Right Arm Spin",
+    age: "36 Yrs",
+    photo: "/players/ankit-sanghvi.jpg",
+    status: "sold",
+    basePrice: 150000,
+    team: "REAL CMR ROYALS",
+    soldPrice: 1500000,
+  },
+  {
+    id: 8,
+    name: "Ashik Mehta",
+    role: "ALLROUNDER",
+    batting: "RBH",
+    bowling: "Right Arm Spin",
+    age: "32 Yrs",
+    photo: "/players/ashik-mehta.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 9,
+    name: "Atit Shah",
+    role: "BOWLER",
+    batting: "RBH",
+    bowling: "Left Arm Fast",
+    age: "26 Yrs",
+    photo: "/players/atit-shah.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 10,
+    name: "Ayaan Vikram Sanghvi",
+    role: "BOWLER",
+    batting: "RBH",
+    bowling: "Right Arm Fast",
+    age: "16 Yrs",
+    photo: "/players/ayaan-sanghvi.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 11,
+    name: "Bharat bhansali",
+    role: "BATSMAN",
+    batting: "RBH",
+    bowling: "",
+    age: "39 Yrs",
+    photo: "/players/bharat-bhansali.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+  {
+    id: 12,
+    name: "Bharat shah",
+    role: "ALLROUNDER",
+    batting: "RBH",
+    bowling: "Right Arm Fast",
+    age: "37 Yrs",
+    photo: "/players/bharat-shah.jpg",
+    status: "available",
+    basePrice: 150000,
+    team: "",
+    soldPrice: 0,
+  },
+];
 
-//   useEffect(() => {
-//     // Get user role from localStorage, API, or authentication system
-//     const loadUserRole = async () => {
-//       try {
-//         // Example: Get from localStorage (in real app, this would come from authentication)
-//         const storedRole = localStorage.getItem('userRole');
-//         const storedTeamId = localStorage.getItem('teamId');
-//         const storedUserId = localStorage.getItem('userId');
-        
-//         if (storedRole && storedUserId) {
-//           const role: UserRole = {
-//             id: storedUserId,
-//             role: storedRole as 'admin' | 'bidder',
-//             teamId: storedTeamId || undefined,
-//             teamName: localStorage.getItem('teamName') || undefined,
-//           };
-//           setUserRole(role);
-//         } else {
-//           // Fallback: prompt user to select role (for demo purposes)
-//           const selectedRole = await promptUserRole();
-//           if (selectedRole) {
-//             setUserRole(selectedRole);
-//             // Save to localStorage
-//             localStorage.setItem('userRole', selectedRole.role);
-//             localStorage.setItem('userId', selectedRole.id);
-//             if (selectedRole.teamId) {
-//               localStorage.setItem('teamId', selectedRole.teamId);
-//               localStorage.setItem('teamName', selectedRole.teamName || '');
-//             }
-//           } else {
-//             setError('Please select a role to continue');
-//           }
-//         }
-//       } catch (err) {
-//         setError('Failed to load user role');
-//         console.error('Error loading user role:', err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+// Current player being auctioned
+const currentPlayer = {
+  id: 39,
+  name: "JOGENDRA SHANTILAL MUTTA",
+  role: "ALLROUNDER",
+  batting: "RBH",
+  bowling: "RIGHT ARM SPIN",
+  age: "28 YRS",
+  experience: "RRC SPL, SPL-AHMEDABAD, ELITE SAVIOURS, RENSA SPL-1 VADODARA",
+  photo: "/players/jogendra-mutta.jpg",
+  currentBid: 1350000,
+  currentBidder: "MUNOT SMASHERS",
+  currentBidderLogo: "/team-logos/munot-smashers.png",
+};
 
-//     if (auctionId) {
-//       loadUserRole();
-//     }
-//   }, [auctionId]);
+const AuctionPage = () => {
+  const [activeTab, setActiveTab] = useState<"teams" | "players">("teams");
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "available" | "sold" | "unsold"
+  >("all");
+  const [sortBy, setSortBy] = useState<string>("name");
+  const [showListView, setShowListView] = useState<boolean>(false);
+  const [teams] = useState(mockTeams);
+  const [players] = useState(mockPlayers);
+  const [soldCount, setSoldCount] = useState(9);
+  const [unsoldCount, setUnsoldCount] = useState(5);
+  const [availableCount, setAvailableCount] = useState(137);
 
-//   const promptUserRole = async (): Promise<UserRole | null> => {
-//     return new Promise((resolve) => {
-//       const modal = document.createElement('div');
-//       modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75';
-//       modal.innerHTML = `
-//         <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-//           <h2 class="text-xl font-bold mb-4">Select Your Role</h2>
-//           <div class="space-y-4">
-//             <button id="admin-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg">
-//               🔧 Admin (Auction Control)
-//             </button>
-//             <button id="bidder-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">
-//               💰 Bidder (Place Bids)
-//             </button>
-//           </div>
-//           <p class="text-gray-600 text-sm mt-4">This selection is for demo purposes. In production, this would come from authentication.</p>
-//         </div>
-//       `;
+  // Role filter state for players view
+  const [activeRoleFilter, setActiveRoleFilter] = useState<string>("ALL");
 
-//       document.body.appendChild(modal);
+  const roleFilters = [
+    "ALL",
+    "ICON",
+    "Batsman",
+    "Allrounder",
+    "Bowler",
+    "Wicketkeeper",
+    "No category",
+  ];
 
-//       const adminBtn = modal.querySelector('#admin-btn');
-//       const bidderBtn = modal.querySelector('#bidder-btn');
+  const handleTabChange = (tab: "teams" | "players") => {
+    setActiveTab(tab);
+  };
 
-//       adminBtn?.addEventListener('click', () => {
-//         document.body.removeChild(modal);
-//         resolve({
-//           id: 'admin-' + Date.now(),
-//           role: 'admin',
-//         });
-//       });
+  const handleFilterChange = (
+    filter: "all" | "available" | "sold" | "unsold"
+  ) => {
+    setActiveFilter(filter);
+  };
 
-//       bidderBtn?.addEventListener('click', () => {
-//         // For bidder, we need to prompt for team selection
-//         const teamModal = document.createElement('div');
-//         teamModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75';
-//         teamModal.innerHTML = `
-//           <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-//             <h2 class="text-xl font-bold mb-4">Select Your Team</h2>
-//             <div class="space-y-3">
-//               <button class="team-btn w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg" data-team="bhargavi-xi" data-name="Bhargavi XI">
-//                 🏏 Bhargavi XI
-//               </button>
-//               <button class="team-btn w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg" data-team="jai-banjari-maa" data-name="Jai Banjari Maa">
-//                 🏏 Jai Banjari Maa
-//               </button>
-//               <button class="team-btn w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg" data-team="neta-ji-11" data-name="Neta Ji 11">
-//                 🏏 Neta Ji 11
-//               </button>
-//               <button class="team-btn w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg" data-team="rocky-xi" data-name="Rocky XI">
-//                 🏏 Rocky XI
-//               </button>
-//               <button class="team-btn w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg" data-team="danger-avenger" data-name="Danger Avenger">
-//                 🏏 Danger Avenger
-//               </button>
-//             </div>
-//           </div>
-//         `;
+  const handleSortChange = (sort: string) => {
+    setSortBy(sort);
+  };
 
-//         document.body.removeChild(modal);
-//         document.body.appendChild(teamModal);
+  const handleViewChange = (listView: boolean) => {
+    setShowListView(listView);
+  };
 
-//         const teamBtns = teamModal.querySelectorAll('.team-btn');
-//         teamBtns.forEach(btn => {
-//           btn.addEventListener('click', (e) => {
-//             const target = e.target as HTMLButtonElement;
-//             const teamId = target.getAttribute('data-team');
-//             const teamName = target.getAttribute('data-name');
-            
-//             document.body.removeChild(teamModal);
-//             resolve({
-//               id: 'bidder-' + Date.now(),
-//               role: 'bidder',
-//               teamId: teamId || undefined,
-//               teamName: teamName || undefined,
-//             });
-//           });
-//         });
-//       });
-//     });
-//   };
+  const filteredPlayers = players.filter((player) => {
+    let statusMatch = true;
+    if (activeFilter === "sold") statusMatch = player.status === "sold";
+    else if (activeFilter === "unsold")
+      statusMatch = player.status === "unsold";
+    else if (activeFilter === "available")
+      statusMatch = player.status === "available";
 
-//   // if (loading) {
-//   //   return (
-//   //     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-//   //       <div className="bg-white rounded-lg p-8 text-center">
-//   //         <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500 mx-auto mb-4"></div>
-//   //         <p className="text-gray-700 font-medium">Loading auction...</p>
-//   //       </div>
-//   //     </div>
-//   //   );
-//   // }
+    let roleMatch = true;
+    if (activeRoleFilter !== "ALL") {
+      if (activeRoleFilter === "Batsman") roleMatch = player.role === "BATSMAN";
+      else if (activeRoleFilter === "Allrounder")
+        roleMatch = player.role === "ALLROUNDER";
+      else if (activeRoleFilter === "Bowler")
+        roleMatch = player.role === "BOWLER";
+      else if (activeRoleFilter === "Wicketkeeper")
+        roleMatch = player.role === "WICKETKEEPER";
+    }
 
-//   if (error) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-//         <div className="bg-white rounded-lg p-8 text-center max-w-md">
-//           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-//             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-//             </svg>
-//           </div>
-//           <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Auction</h2>
-//           <p className="text-gray-600 mb-4">{error}</p>
-//           <button
-//             onClick={() => window.location.reload()}
-//             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-//           >
-//             Try Again
-//           </button>
-//         </div>
-//       </div>
-//     );
-//   }
+    return statusMatch && roleMatch;
+  });
 
-//   // if (!auctionId || !userRole) {
-//   //   return (
-//   //     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-//   //       <div className="bg-white rounded-lg p-8 text-center">
-//   //         <p className="text-gray-700">Invalid auction ID or user role</p>
-//   //       </div>
-//   //     </div>
-//   //   );
-//   // }
-
-//   return (
-//     <AuctionPage 
-//       auctionId={auctionId as string} 
-//       userRole={userRole} 
-//     />
-//   );
-// };
-
-// export default BidPage;
-
-// // // src/app/bid/page.tsx (This replaces BidPage.tsx)
-// // 'use client';
-
-// // import React, { useEffect, useState } from 'react';
-// // import { useRouter, useSearchParams } from 'next/navigation';
-// // import { UserRole } from '@/models/types';
-
-// // // Create a simple AuctionPage component since the import might be causing issues
-// // const AuctionPage: React.FC<{ auctionId: string; userRole: UserRole }> = ({ auctionId, userRole }) => {
-// //   return (
-// //     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-// //       <div className="bg-white rounded-xl p-8 max-w-4xl w-full mx-4 text-center shadow-2xl">
-// //         <h1 className="text-3xl font-bold text-gray-900 mb-6">Cricket Auction System</h1>
-        
-// //         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-// //           {/* Auction Info */}
-// //           <div className="bg-blue-50 p-6 rounded-lg">
-// //             <h2 className="text-xl font-semibold text-blue-900 mb-3">Auction Details</h2>
-// //             <p className="text-blue-700 mb-2"><strong>Auction ID:</strong> {auctionId}</p>
-// //             <p className="text-blue-700 mb-2"><strong>Your Role:</strong> {userRole.role}</p>
-// //             {userRole.teamName && (
-// //               <p className="text-blue-700 mb-2"><strong>Team:</strong> {userRole.teamName}</p>
-// //             )}
-// //             <div className="mt-4 p-3 bg-green-100 rounded border-l-4 border-green-500">
-// //               <p className="text-green-700 text-sm">✅ Successfully connected to auction system!</p>
-// //             </div>
-// //           </div>
-
-// //           {/* Role-specific content */}
-// //           <div className="bg-purple-50 p-6 rounded-lg">
-// //             <h2 className="text-xl font-semibold text-purple-900 mb-3">
-// //               {userRole.role === 'admin' ? 'Admin Controls' : 'Bidding Interface'}
-// //             </h2>
-            
-// //             {userRole.role === 'admin' ? (
-// //               <div className="space-y-3">
-// //                 <button className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-// //                   🎯 Spin Wheel
-// //                 </button>
-// //                 <button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-// //                   ✅ Allocate Player
-// //                 </button>
-// //                 <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-// //                   ❌ Mark Unsold
-// //                 </button>
-// //               </div>
-// //             ) : (
-// //               <div className="space-y-3">
-// //                 <div className="p-3 bg-yellow-100 rounded border-l-4 border-yellow-500">
-// //                   <p className="text-yellow-700 text-sm">Waiting for player selection...</p>
-// //                 </div>
-// //                 <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" disabled>
-// //                   💰 Place Bid (No player selected)
-// //                 </button>
-// //               </div>
-// //             )}
-// //           </div>
-// //         </div>
-
-// //         {/* Status */}
-// //         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-// //           <div className="flex items-center justify-center space-x-4 text-sm text-gray-600">
-// //             <div className="flex items-center space-x-2">
-// //               <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
-// //               <span>Demo Mode - Full auction system loading...</span>
-// //             </div>
-// //           </div>
-// //           <p className="text-gray-500 text-xs mt-2">
-// //             This is a basic interface. The full auction system with wheel, live bidding, and WebSocket integration will load once all components are properly set up.
-// //           </p>
-// //         </div>
-// //       </div>
-// //     </div>
-// //   );
-// // };
-
-// // const BidPage: React.FC = () => {
-// //   const router = useRouter();
-// //   const searchParams = useSearchParams();
-// //   const auctionId = searchParams.get('auctionId') || 'default-auction';
-  
-// //   const [userRole, setUserRole] = useState<UserRole | null>(null);
-// //   const [loading, setLoading] = useState(true);
-// //   const [error, setError] = useState<string | null>(null);
-
-// //   useEffect(() => {
-// //     const loadUserRole = async () => {
-// //       try {
-// //         // Get user role from localStorage
-// //         const storedRole = localStorage.getItem('userRole');
-// //         const storedTeamId = localStorage.getItem('teamId');
-// //         const storedUserId = localStorage.getItem('userId');
-        
-// //         if (storedRole && storedUserId) {
-// //           const role: UserRole = {
-// //             id: storedUserId,
-// //             role: storedRole as 'admin' | 'bidder',
-// //             teamId: storedTeamId || undefined,
-// //             teamName: localStorage.getItem('teamName') || undefined,
-// //           };
-// //           setUserRole(role);
-// //         } else {
-// //           // Prompt user to select role
-// //           const selectedRole = await promptUserRole();
-// //           if (selectedRole) {
-// //             setUserRole(selectedRole);
-// //             // Save to localStorage
-// //             localStorage.setItem('userRole', selectedRole.role);
-// //             localStorage.setItem('userId', selectedRole.id);
-// //             if (selectedRole.teamId) {
-// //               localStorage.setItem('teamId', selectedRole.teamId);
-// //               localStorage.setItem('teamName', selectedRole.teamName || '');
-// //             }
-// //           } else {
-// //             setError('Please select a role to continue');
-// //           }
-// //         }
-// //       } catch (err) {
-// //         setError('Failed to load user role');
-// //         console.error('Error loading user role:', err);
-// //       } finally {
-// //         setLoading(false);
-// //       }
-// //     };
-
-// //     loadUserRole();
-// //   }, []);
-
-// //   const promptUserRole = async (): Promise<UserRole | null> => {
-// //     return new Promise((resolve) => {
-// //       const modal = document.createElement('div');
-// //       modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75';
-// //       modal.innerHTML = `
-// //         <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-// //           <h2 class="text-xl font-bold mb-4">Select Your Role</h2>
-// //           <div class="space-y-4">
-// //             <button id="admin-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-// //               🔧 Admin (Auction Control)
-// //             </button>
-// //             <button id="bidder-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-// //               💰 Bidder (Place Bids)
-// //             </button>
-// //           </div>
-// //           <p class="text-gray-600 text-sm mt-4">This selection is for demo purposes.</p>
-// //         </div>
-// //       `;
-
-// //       document.body.appendChild(modal);
-
-// //       const adminBtn = modal.querySelector('#admin-btn');
-// //       const bidderBtn = modal.querySelector('#bidder-btn');
-
-// //       adminBtn?.addEventListener('click', () => {
-// //         document.body.removeChild(modal);
-// //         resolve({
-// //           id: 'admin-' + Date.now(),
-// //           role: 'admin',
-// //         });
-// //       });
-
-// //       bidderBtn?.addEventListener('click', () => {
-// //         // Show team selection
-// //         const teamModal = document.createElement('div');
-// //         teamModal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75';
-// //         teamModal.innerHTML = `
-// //           <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-// //             <h2 class="text-xl font-bold mb-4">Select Your Team</h2>
-// //             <div class="space-y-3">
-// //               <button class="team-btn w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-team="bhargavi-xi" data-name="Bhargavi XI">
-// //                 🏏 Bhargavi XI
-// //               </button>
-// //               <button class="team-btn w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-team="jai-banjari-maa" data-name="Jai Banjari Maa">
-// //                 🏏 Jai Banjari Maa
-// //               </button>
-// //               <button class="team-btn w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-team="neta-ji-11" data-name="Neta Ji 11">
-// //                 🏏 Neta Ji 11
-// //               </button>
-// //               <button class="team-btn w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-team="rocky-xi" data-name="Rocky XI">
-// //                 🏏 Rocky XI
-// //               </button>
-// //               <button class="team-btn w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-team="danger-avenger" data-name="Danger Avenger">
-// //                 🏏 Danger Avenger
-// //               </button>
-// //             </div>
-// //           </div>
-// //         `;
-
-// //         document.body.removeChild(modal);
-// //         document.body.appendChild(teamModal);
-
-// //         const teamBtns = teamModal.querySelectorAll('.team-btn');
-// //         teamBtns.forEach(btn => {
-// //           btn.addEventListener('click', (e) => {
-// //             const target = e.target as HTMLButtonElement;
-// //             const teamId = target.getAttribute('data-team');
-// //             const teamName = target.getAttribute('data-name');
-            
-// //             document.body.removeChild(teamModal);
-// //             resolve({
-// //               id: 'bidder-' + Date.now(),
-// //               role: 'bidder',
-// //               teamId: teamId || undefined,
-// //               teamName: teamName || undefined,
-// //             });
-// //           });
-// //         });
-// //       });
-// //     });
-// //   };
-
-// //   if (loading) {
-// //     return (
-// //       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-// //         <div className="bg-white rounded-lg p-8 text-center">
-// //           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-500 mx-auto mb-4"></div>
-// //           <p className="text-gray-700 font-medium">Loading auction...</p>
-// //         </div>
-// //       </div>
-// //     );
-// //   }
-
-// //   if (error) {
-// //     return (
-// //       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-// //         <div className="bg-white rounded-lg p-8 text-center max-w-md">
-// //           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-// //             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-// //               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-// //             </svg>
-// //           </div>
-// //           <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Auction</h2>
-// //           <p className="text-gray-600 mb-4">{error}</p>
-// //           <div className="space-y-2">
-// //             <button
-// //               onClick={() => {
-// //                 localStorage.clear();
-// //                 window.location.reload();
-// //               }}
-// //               className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-// //             >
-// //               Reset & Try Again
-// //             </button>
-// //             <button
-// //               onClick={() => router.push('/')}
-// //               className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
-// //             >
-// //               Go Home
-// //             </button>
-// //           </div>
-// //         </div>
-// //       </div>
-// //     );
-// //   }
-
-// //   if (!userRole) {
-// //     return (
-// //       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
-// //         <div className="bg-white rounded-lg p-8 text-center">
-// //           <p className="text-gray-700">Please select your role to continue</p>
-// //           <button
-// //             onClick={() => window.location.reload()}
-// //             className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
-// //           >
-// //             Refresh
-// //           </button>
-// //         </div>
-// //       </div>
-// //     );
-// //   }
-
-// //   return (
-// //     <AuctionPage 
-// //       auctionId={auctionId} 
-// //       userRole={userRole} 
-// //     />
-// //   );
-// // };
-
-// // export default BidPage;
-
-
-// src/app/bid/page.tsx (Simplified - No Authentication)
-'use client';
-
-// import React, { useState } from 'react';
-// import { useSearchParams } from 'next/navigation';
-// import AuctionPage from '@/components/AuctionPage';
-// import { UserRole } from '@/models/types';
-
-// const BidPage: React.FC = () => {
-//   const searchParams = useSearchParams();
-//   const auctionId = searchParams.get('auctionId') || 'default-auction';
-  
-//   // Default user role - change this to test different roles
-//   const [userRole] = useState<UserRole>({
-//     id: 'user-' + Date.now(),
-//     role: 'admin', // Change to 'bidder' to test bidder interface
-//     teamId: 'bhargavi-xi', // Only needed if role is 'bidder'
-//     teamName: 'Bhargavi XI', // Only needed if role is 'bidder'
-//   });
-
-//   // For bidder role, use this instead:
-//   /*
-//   const [userRole] = useState<UserRole>({
-//     id: 'user-' + Date.now(),
-//     role: 'bidder',
-//     teamId: 'bhargavi-xi',
-//     teamName: 'Bhargavi XI',
-//   });
-//   */
-
-//   return (
-//     <AuctionPage 
-//       auctionId={auctionId} 
-//       userRole={userRole} 
-//     />
-//   );
-// };
-
-// export default BidPage;
-
-
-// src/components/CurrentPlayer/FixedBidButton.tsx
-import React from "react";
-import { Player, UserRole } from "@/models/types";
-import ButtonPrimary from "@/components/Shared/ButtonPrimary";
-
-
-interface FixedBidButtonProps {
-  player?: Player;
-  currentBid: number;
-  bidIncrement: number;
-  userRole: UserRole;
-  onPlaceBid: () => Promise<void>; // no amount needed
-  disabled?: boolean;
-  loading?: boolean;
-}
-
-const FixedBidButton: React.FC<FixedBidButtonProps> = ({
-  player,
-  currentBid,
-  bidIncrement,
-  userRole,
-  onPlaceBid,
-  disabled = false,
-  loading = false,
-}) => {
-  if (userRole.role === "admin") {
-    return (
-      <div className="bg-yellow-900 bg-opacity-50 border border-yellow-600 rounded-lg p-4">
-        <p className="text-yellow-400 font-semibold text-center">
-          Admin controls bidding separately
-        </p>
-      </div>
-    );
-  }
-
-  if (!player) {
-    return (
-      <div className="bg-gray-800 rounded-lg p-6 text-center">
-        <p className="text-gray-400">Select a player to start bidding</p>
-      </div>
-    );
-  }
-
-  const nextBid = currentBid + bidIncrement;
-  const isDisabled = disabled || loading;
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString();
+  };
 
   return (
-    <div className="bg-gradient-to-br from-green-900 to-green-800 rounded-xl border-2 border-green-400 p-6 shadow-2xl text-center">
-      <h3 className="text-xl font-bold text-white mb-4">Place Your Bid</h3>
+    <div
+      className="min-h-screen bg-cover bg-center flex" 
+      style={{ backgroundImage: "url('/bg1.jpg')", height: "100vh" }} 
+    >
+      {/* Left Section */}
+      <div className="w-4/12  bg-black/10">
+        <div className="col-span-5 p-5 ">
+          <Card className="bg-blue-300 mb-4 rounded-2xl shadow-lg ">
+            <CardContent className="bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-between p-6">
+              <div className="flex items-center space-x-4">
+                <img
+                  src="/rensa-logo.png"
+                  alt="Rensa Logo"
+                  className="w-20 h-20 rounded-xl shadow-md"
+                />
+                <div>
+                  <h1 className="text-2xl font-bold text-yellow-400">
+                    RENSA BSPL-2
+                  </h1>
+                </div>
+              </div>
+              <img
+                src="/rensa-sponsor.png"
+                alt="Sponsor"
+                className="w-16 h-16 rounded-lg shadow"
+              />
+            </CardContent>
+          </Card>
 
-      <div className="mb-6 text-green-200">
-        Current Bid:{" "}
-        <span className="font-semibold text-white">
-          {formatCurrency(currentBid)}
-        </span>
+          {/* Current Player Card */}
+          <Card className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl shadow-lg text-white  relative ">
+            <CardContent className="p-4">
+              {/* Top Section */}
+              <div className="flex items-start justify-between mb-3">
+                {/* Player Number Badge */}
+                <div className="bg-yellow-400 text-black font-bold text-sm px-2 py-0.5 rounded-br-md shadow">
+                  {currentPlayer.id}
+                </div>
+
+                {/* Player Role Badge */}
+                <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md shadow">
+                  {currentPlayer.role}
+                </div>
+              </div>
+
+              {/* Player Info */}
+              <div className="flex items-start space-x-3 mb-4">
+                <img
+                  src={currentPlayer.photo}
+                  alt={currentPlayer.name}
+                  className="w-20 h-20 rounded-lg border border-yellow-400 object-cover shadow-md"
+                />
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-yellow-400 ">
+                    {currentPlayer.name}
+                  </h2>
+                  <div className="space-y-0.1 text-xs text-gray-2000 leading-snug">
+                    <p>{currentPlayer.batting}</p>
+                    <p>{currentPlayer.bowling}</p>
+                    <p>AGE : {currentPlayer.age} YRS</p>
+                    <p>{currentPlayer.experience}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Bid Section */}
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg p-3 mb-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <img
+                    src={currentPlayer.currentBidderLogo}
+                    alt={currentPlayer.currentBidder}
+                    className="w-8 h-8 rounded-full border border-gray-600 shadow"
+                  />
+                  <span className="text-gray-400 text-[11px] uppercase">
+                    Current Bid
+                  </span>
+                </div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {formatCurrency(currentPlayer.currentBid)}
+                </div>
+              </div>
+
+              {/* Team Name */}
+              <div className="text-center text-yellow-400 font-semibold tracking-wide uppercase text-sm border-t border-gray-700 pt-1">
+                {currentPlayer.currentBidder}
+              </div>
+            </CardContent>
+          </Card>
+        </div>{" "}
       </div>
 
-      <ButtonPrimary
-        onClick={onPlaceBid}
-        disabled={isDisabled}
-        loading={loading}
-        className="bg-green-500 hover:bg-green-400 text-white font-bold py-4 px-6 rounded-lg transition-transform transform hover:scale-105"
-      >
-        <div>
-          <div className="text-sm">Next Bid</div>
-          <div className="text-lg font-bold">{formatCurrency(nextBid)}</div>
+      {/* Right Section */}
+      <div className="w-8/12  bg-black/20 h-full overflow-hidden">
+        <div className="col-span-7 ">
+          {/* Header */}
+          <Card className="bg-blue-300 rounded-2xl shadow-lg border border-blue-700   mb-6 m-4">
+            <CardContent className="px-4 py-4 bg-gradient-to-r from-blue-400 to-blue-500">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                {/* Left Side - Tabs */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleTabChange("teams")}
+                    className={`
+                px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-105
+                ${
+                  activeTab === "teams"
+                    ? "bg-orange-400 text-black shadow-lg"
+                    : "bg-transparent text-white border border-blue-400 hover:bg-blue-800"
+                }
+              `}
+                  >
+                    TEAMS
+                  </button>
+                  <button
+                    onClick={() => handleTabChange("players")}
+                    className={`
+                px-6 py-3 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-105
+                ${
+                  activeTab === "players"
+                    ? "bg-orange-400 text-black shadow-lg"
+                    : "bg-transparent text-white border border-blue-400 hover:bg-blue-800"
+                }
+              `}
+                  >
+                    PLAYERS
+                  </button>
+                </div>
+
+                {/* Center - Stats Badges (only for teams tab) */}
+                {activeTab === "teams" && (
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-500 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center space-x-2 shadow-lg">
+                      <span>SOLD:</span>
+                      <span>{soldCount}</span>
+                    </div>
+                    <div className="bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm flex items-center space-x-2 shadow-lg">
+                      <span>UNSOLD:</span>
+                      <span>{unsoldCount}</span>
+                    </div>
+                    <div className="bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-sm flex items-center space-x-2 shadow-lg">
+                      <span>AVL:</span>
+                      <span>{availableCount}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Right Side - Controls */}
+                <div className="flex items-center space-x-3">
+                  {activeTab === "players" && (
+                    <div className="flex items-center space-x-2">
+                      {(
+                        ["all", "available", "sold", "unsold"] as Array<
+                          "all" | "available" | "sold" | "unsold"
+                        >
+                      ).map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => handleFilterChange(filter)}
+                          className={`
+                      px-3 py-2 rounded-lg font-medium text-sm transition-colors
+                      ${
+                        activeFilter === filter
+                          ? "bg-blue-500 text-white"
+                          : "bg-blue-800 text-blue-200 hover:bg-blue-700"
+                      }
+                    `}
+                        >
+                          {filter.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Role Filter for Players (Second row) */}
+          {activeTab === "players" && (
+            <Card className="bg-blue-300 rounded-2xl shadow-lg border border-blue-700   mb-6 m-4">
+              <CardContent className="px-4 py-4 bg-gradient-to-r from-blue-400 to-blue-500">
+                <div className="flex items-center space-x-1">
+                  <span className="bg-yellow-400 text-black px-3 py-1 rounded text-sm font-bold mr-3">
+                    151
+                  </span>
+                  {roleFilters.map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => setActiveRoleFilter(role)}
+                      className={`
+            px-3 py-1 rounded text-sm font-medium transition-colors
+            ${
+              activeRoleFilter === role
+                ? "bg-blue-500 text-white"
+                : "bg-blue-700 text-blue-200 hover:bg-blue-600"
+            }
+          `}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Section */}
+          <div className="h-screen">
+  <div className="h-100 overflow-y-auto custom-scroll">
+    {activeTab === "teams" && (
+      <div className="grid grid-cols-2 gap-4">
+        {teams.map((team) => (
+          <div
+            key={team.id}
+            className="bg-blue-400 rounded-lg p-4 hover:bg-blue-500 transition-colors m-2"
+          >
+            <div className="flex items-center space-x-4 mb-3">
+              <img src={team.logo} alt={team.name} className="w-12 h-12" />
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white">{team.name}</h3>
+                <div className="text-2xl font-bold text-yellow-400">
+                  {team.playerCount}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-yellow-400">
+                  {formatCurrency(team.currentBid)}
+                </div>
+                <div className="text-sm text-gray-300">
+                  Max {formatCurrency(team.maxBudget)}
+                </div>
+                <div className="text-sm text-green-400">
+                  Res {formatCurrency(team.remainingBudget)}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {activeTab === "players" && (
+      <div className="h-85 overflow-y-auto custom-scroll">
+        <div className="grid grid-cols-3 gap-4">
+          {filteredPlayers.map((player, index) => (
+            <div
+              key={player.id}
+              className="bg-blue-300 rounded-lg p-4 hover:bg-blue-400 transition-colors relative m-2"
+            >
+              {/* Player Number Badge */}
+              <div className="absolute -top-2 -left-2 bg-yellow-400 text-black text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center">
+                {index + 1}
+              </div>
+
+              <div className="flex items-start space-x-3 mb-3">
+                <img
+                  src={player.photo}
+                  alt={player.name}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-yellow-400 mb-1">
+                    {player.name}
+                  </h3>
+                  <div className="text-sm text-black-300 mb-1">{player.batting}</div>
+                  <div className="text-sm text-black-300 mb-1">{player.bowling}</div>
+                  <div className="text-sm text-black-300">Age: {player.age}</div>
+                </div>
+              </div>
+
+              {/* Role Badge */}
+              <div
+                className={`
+                  text-xs font-bold px-2 py-1 rounded w-fit mb-2
+                  ${
+                    player.role === "ALLROUNDER"
+                      ? "bg-orange-500 text-black"
+                      : player.role === "BATSMAN"
+                      ? "bg-yellow-500 text-black"
+                      : player.role === "BOWLER"
+                      ? "bg-green-500 text-white"
+                      : "bg-blue-500 text-white"
+                  }
+                `}
+              >
+                {player.role}
+              </div>
+
+              {/* Team and Price Info */}
+              {player.status === "sold" && (
+                <div className="mt-2">
+                  <div className="bg-green-600 text-white px-2 py-1 rounded text-sm font-bold">
+                    {player.team}
+                  </div>
+                  <div className="text-lg font-bold text-black-400 mt-1">
+                    {formatCurrency(player.soldPrice)}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </ButtonPrimary>
+      </div>
+    )}
+  </div>
+</div>
+        </div>{" "}
+      </div>
     </div>
   );
 };
 
-export default FixedBidButton;
+export default AuctionPage;
