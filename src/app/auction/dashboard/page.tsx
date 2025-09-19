@@ -10,12 +10,10 @@ import {
   Shield, 
   Calendar, 
   Clock, 
-  TrendingUp, 
   DollarSign,
   Eye,
   Search,
   Filter,
-  MoreVertical,
   Award,
   Activity,
   CheckCircle,
@@ -23,8 +21,10 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import useUserData from '@/lib/hooks/useUserData'; // Adjust the import path as needed
+import useUserData from '@/lib/hooks/useUserData'; 
 import useAuthToken from '@/lib/hooks/useAuthToken';
+import toast from "react-hot-toast"
+import DeleteConfirmation from "@/components/DeleteConfirmation"
 
 export default function AuctionDashboard() {
   const [auctions, setAuctions] = useState([]);
@@ -35,6 +35,7 @@ export default function AuctionDashboard() {
   const { userId } = useUserData();
   const { token } = useAuthToken();
   const router = useRouter();
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchAuctions = async () => {
@@ -49,7 +50,10 @@ export default function AuctionDashboard() {
           throw new Error('Failed to fetch auctions');
         }
         const data = await response.json();
-        setAuctions(data);
+       setAuctions(data.map(a => ({
+  ...a,
+  status: a.status || 'unknown'
+})));
       } catch (err) {
         setError(err.message);
       } finally {
@@ -62,22 +66,21 @@ export default function AuctionDashboard() {
     }
   }, [userId, token]);
 
-  // Filter auctions based on search and status
   const filteredAuctions = auctions.filter(auction => {
-    const matchesSearch = auction.auctionName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || auction.status.toLowerCase() === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const status = auction.status?.toLowerCase() || '';
+  const matchesSearch = auction.auctionName?.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesFilter = filterStatus === 'all' || status === filterStatus;
+  return matchesSearch && matchesFilter;
+});
 
-  // Calculate stats
-  const stats = {
-    total: auctions.length,
-    upcoming: auctions.filter(a => a.status.toLowerCase() === 'upcoming').length,
-    live: auctions.filter(a => a.status.toLowerCase() === 'live').length,
-    completed: auctions.filter(a => a.status.toLowerCase() === 'completed').length,
-    totalPlayers: auctions.reduce((sum, a) => sum + a.playerPerTeam, 0),
-    totalRevenue: auctions.reduce((sum, a) => sum + a.minimumBid || 0, 0),
-  };
+const stats = {
+  total: auctions.length,
+  upcoming: auctions.filter(a => (a.status?.toLowerCase() || '') === 'upcoming').length,
+  live: auctions.filter(a => (a.status?.toLowerCase() || '') === 'live').length,
+  completed: auctions.filter(a => (a.status?.toLowerCase() || '') === 'completed').length,
+  totalPlayers: auctions.reduce((sum, a) => sum + (a.playerPerTeam || 0), 0),
+  totalRevenue: auctions.reduce((sum, a) => sum + (a.minimumBid || 0), 0),
+};
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -119,6 +122,29 @@ export default function AuctionDashboard() {
     );
   }
 
+
+ const handleDelete = async () => {
+    if (!deleteId) return
+    try {
+      const res = await fetch(`http://localhost:8080/auctions/${deleteId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`, 
+        },
+      })
+
+
+      setAuctions(prev => prev.filter(a => a.id !== deleteId))
+      toast.success("Auction deleted successfully!") 
+    } catch (error) {
+      toast.error("Error deleting auction")
+      console.error(error)
+    } finally {
+      setDeleteId(null) 
+    }
+  }
+
+
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
       <Navbar />
@@ -147,7 +173,6 @@ export default function AuctionDashboard() {
             </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
             <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-xl p-6 shadow-lg border border-rose-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
               <div className="flex items-center justify-between mb-4">
@@ -216,7 +241,6 @@ export default function AuctionDashboard() {
             </div>
           </div>
 
-          {/* Search and Filter Section */}
           <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 mb-8">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="relative flex-1">
@@ -245,7 +269,6 @@ export default function AuctionDashboard() {
             </div>
           </div>
 
-          {/* Auctions List */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="bg-gray-50 px-8 py-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -323,14 +346,14 @@ export default function AuctionDashboard() {
                         <div className="mt-8 xl:mt-0 xl:ml-8">
                           <div className="flex flex-wrap gap-3">
                             <button
-                              onClick={() => router.push('/player/registration')}
+                            onClick={() => router.push(`/auction//view/${auction.id}`)}
                               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
                             >
                               <Eye className="w-4 h-4" />
                               <span>View</span>
                             </button>
                             <button
-                              onClick={() => router.push('/auction/edit')}
+                              onClick={() => router.push(`/auction//edit/${auction.id}`)}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
@@ -350,13 +373,9 @@ export default function AuctionDashboard() {
                               <Shield className="w-4 h-4" />
                               <span>Teams</span>
                             </button>
-                            <button
-                              onClick={() => router.push('/auction/delete')}
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>Delete</span>
-                            </button>
+                             <button onClick={() => setDeleteId(auction.id)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md">
+                          <Trash2 className="w-4 h-4" /> Delete
+                        </button>
                           </div>
                         </div>
                       </div>
@@ -367,7 +386,6 @@ export default function AuctionDashboard() {
             </div>
           </div>
 
-          {/* Quick Actions */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-rose-50 to-pink-100 rounded-xl p-8 shadow-lg border border-rose-200 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105">
               <div className="text-center">
@@ -401,6 +419,13 @@ export default function AuctionDashboard() {
           </div>
         </div>
       </div>
+       <DeleteConfirmation
+        isOpen={!!deleteId}
+        title="Delete Auction"
+        message="Are you sure you want to delete this auction? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }
