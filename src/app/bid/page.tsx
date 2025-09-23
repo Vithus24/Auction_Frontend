@@ -437,7 +437,7 @@ const AuctionPage = () => {
               </span>
             </button>
           </div> */}{" "}
-          */
+          
           <div className="flex justify-center pt-1">
             <button
               className={`
@@ -667,8 +667,8 @@ const AuctionPage = () => {
                         key={player.id}
                         className={`relative w-60 h-30 rounded-lg shadow-md transition-transform transform hover:scale-105  ${
                           player.status === "sold"
-                            ? "bg-gradient-to-r from-green-600 to-green-500"
-                            : "bg-gradient-to-r from-blue-800 to-blue-700"
+                            ? "bg-gradient-to-r from-green-300 to-green-300"
+                            : "bg-gradient-to-r from-blue-400 to-blue-400"
                         }`}
                       >
                         {/* Player Number Badge */}
