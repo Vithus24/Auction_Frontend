@@ -870,7 +870,7 @@ const TeamRegistration: React.FC = () => {
           )}
 
           {/* ===== Other Auction Teams ===== */}
-          {categorizedTeams.otherAuctionTeams.length > 0 && (
+          {/* {categorizedTeams.otherAuctionTeams.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border">
               <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
@@ -891,7 +891,7 @@ const TeamRegistration: React.FC = () => {
                 ))}
               </ul>
             </div>
-          )}
+          )} */}
 
           {/* No teams message */}
           {teams.length === 0 && !listLoading && !listError && (
