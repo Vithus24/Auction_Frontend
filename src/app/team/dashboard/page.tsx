@@ -95,12 +95,13 @@ export default function TeamDashboard() {
 
     if (userId) fetchAuctions();
   }, [userId, token]);
-
+console.log("auctions...",auctions);
   
 
   const getImageUrl = (auction: Auction) => {
-    if (auction.image) {
-      return `data:image/jpeg;base64,${auction.image}`;
+    if (auction.imageUrl) {
+      return `http://localhost:8080${auction.imageUrl}`;
+      
     }
     return null;
   };
@@ -164,6 +165,7 @@ export default function TeamDashboard() {
       </div>
     );
   }
+  console.log("img",getImageUrl(auctions[4]));
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
