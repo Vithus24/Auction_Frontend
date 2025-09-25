@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
@@ -14,7 +13,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 interface TeamFormData {
   name: string;
   budget: string;
-  logoFile?: File | null;
+  logoFile: File | null;         
   logoPreview?: string | null;
   ownerId?: number;
   auctionId: number;
@@ -44,6 +43,29 @@ interface TeamDetail {
   auctionId: number;
   imageUrl: string;
 }
+
+
+interface TeamApiResponse {
+  id: number | string;
+  name?: string;
+  budget?: number | string;
+  ownerId: number | string;
+  ownerMail?: string;
+  auctionId: number | string;
+  imageUrl?: string | null;
+  image?: string | null;
+  imageContentType?: string | null;
+  status?: string | null;
+  playersCount?: number;
+}
+
+// ---------- Form error type ----------
+type FormErrors = {
+  name?: string;
+  budget?: string;
+  logoFile?: string; 
+  form?: string;
+};
 
 // ---------- Helpers ----------
 const readFileToDataUrl = (file: File) =>
@@ -128,13 +150,13 @@ const TeamRegistration: React.FC = () => {
   const [formData, setFormData] = useState<TeamFormData>({
     name: '',
     budget: '',
-    logoFile: null,
+    logoFile: null,               
     logoPreview: null,
     ownerId: undefined,
     auctionId: currentAuctionIdNum || 0,
   });
 
-  const [errors, setErrors] = useState<Partial<TeamFormData> & { form?: string; logoFile?: string }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -161,8 +183,6 @@ const TeamRegistration: React.FC = () => {
     }
   }, [userId]);
 
-  
- 
   // ----- Enhanced ownership and access control helpers -----
   const isTeamOwner = useCallback(
     (team: { ownerId: number } | null | undefined) =>
@@ -170,20 +190,16 @@ const TeamRegistration: React.FC = () => {
     [userId]
   );
 
-  const isCurrentAuctionTeam = useCallback(
-    (team: { auctionId: number } | null | undefined) =>
-      currentAuctionIdNum !== null && !!team && Number(team.auctionId) === Number(currentAuctionIdNum),
-    [currentAuctionIdNum]
-  );
+
 
   const canManageTeam = useCallback(
     (team: { ownerId: number; auctionId: number } | null | undefined) => {
       if (!team || typeof userId !== 'number') return false;
-      
-      // Team owner can only manage teams in the current auction
+
       const isOwner = Number(team.ownerId) === Number(userId);
-      const isCurrentAuction = currentAuctionIdNum !== null && Number(team.auctionId) === Number(currentAuctionIdNum);
-      
+      const isCurrentAuction =
+        currentAuctionIdNum !== null && Number(team.auctionId) === Number(currentAuctionIdNum);
+
       return isOwner && isCurrentAuction;
     },
     [userId, currentAuctionIdNum]
@@ -207,10 +223,10 @@ const TeamRegistration: React.FC = () => {
         throw new Error(txt || `Failed to load teams: ${res.status}`);
       }
 
-      const data = await res.json();
+      const data: unknown = await res.json();
 
-      const mapped: Team[] = (Array.isArray(data) ? data : [])
-        .map((t: any) => ({
+      const mapped: Team[] = (Array.isArray(data) ? (data as TeamApiResponse[]) : [])
+        .map((t) => ({
           id: Number(t.id),
           name: t.name || 'Unnamed Team',
           budget: Number(t.budget) || 0,
@@ -218,9 +234,9 @@ const TeamRegistration: React.FC = () => {
           ownerMail: t.ownerMail || 'No email',
           auctionId: Number(t.auctionId) || 0,
           imageUrl: resolveImmediateImageSrc({
-            imageUrl: t.imageUrl,
-            image: t.image,
-            imageContentType: t.imageContentType,
+            imageUrl: t.imageUrl ?? undefined,
+            image: t.image ?? undefined,
+            imageContentType: t.imageContentType ?? undefined,
           }),
           status: (typeof t.status === 'string' ? t.status.toLowerCase() : undefined) as
             | 'active'
@@ -234,7 +250,7 @@ const TeamRegistration: React.FC = () => {
         .filter((t) => t.status !== 'inactive');
 
       setTeams(mapped);
-    } catch (e) {
+    } catch (e: unknown) {
       setListError(e instanceof Error ? e.message : 'Failed to load teams');
       console.error('Error fetching teams:', e);
     } finally {
@@ -242,7 +258,7 @@ const TeamRegistration: React.FC = () => {
     }
   }, [token]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (token) {
       fetchTeams();
     }
@@ -250,16 +266,17 @@ const TeamRegistration: React.FC = () => {
 
   // Derived stats - only for current auction teams
   const stats = useMemo(() => {
-    const currentAuctionTeams = teams.filter(t => 
-      currentAuctionIdNum !== null && t.auctionId === currentAuctionIdNum
+    const currentAuctionTeams = teams.filter(
+      (t) => currentAuctionIdNum !== null && t.auctionId === currentAuctionIdNum
     );
-    
+
     const total = currentAuctionTeams.length;
     const active = currentAuctionTeams.filter((t) => t.status === 'active' || t.status === undefined).length;
-    const avgRating = total > 0 ? 
-      (currentAuctionTeams.reduce((sum, t) => sum + (t.rating || 0), 0) / total).toFixed(1) : 
-      '0.0';
-    
+    const avgRating =
+      total > 0
+        ? (currentAuctionTeams.reduce((sum, t) => sum + (t.rating || 0), 0) / total).toFixed(1)
+        : '0.0';
+
     return { total, active, avgRating };
   }, [teams, currentAuctionIdNum]);
 
@@ -267,41 +284,54 @@ const TeamRegistration: React.FC = () => {
   const categorizedTeams = useMemo(() => {
     const currentAuctionTeams: Team[] = [];
     const otherAuctionTeams: Team[] = [];
-    
-    teams.forEach(team => {
+
+    teams.forEach((team) => {
       if (currentAuctionIdNum !== null && team.auctionId === currentAuctionIdNum) {
         currentAuctionTeams.push(team);
       } else {
         otherAuctionTeams.push(team);
       }
     });
-    
+
     return { currentAuctionTeams, otherAuctionTeams };
   }, [teams, currentAuctionIdNum]);
 
   // ---------- Handlers ----------
+  const isErrorKey = (k: string): k is keyof FormErrors =>
+    k === 'name' || k === 'budget' || k === 'logoFile' || k === 'form';
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, files } = e.target as HTMLInputElement;
+    const { name, value, files } = e.currentTarget;
 
     if (name === 'logoFile' && files?.[0]) {
       const file = files[0];
       readFileToDataUrl(file)
-        .then((url) => setFormData((prev) => ({ ...prev, logoFile: file, logoPreview: url })))
+        .then((url) => {
+          setFormData((prev) => ({ ...prev, logoFile: file, logoPreview: url }));
+          setErrors((prev) => ({ ...prev, logoFile: undefined })); // clear logoFile error
+        })
         .catch(() => setErrors((prev) => ({ ...prev, logoFile: 'Failed to read image' })));
       return;
     }
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if ((errors as any)[name]) setErrors((prev) => ({ ...prev, [name]: '' as any }));
+    if (name === 'name' || name === 'budget') {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (isErrorKey(name) && errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+    }
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<TeamFormData> & { form?: string } = {};
+    const newErrors: FormErrors = {};
+
     if (!formData.name?.trim()) newErrors.name = 'Team name is required';
-    if (!formData.budget?.trim() || Number(formData.budget) <= 0) newErrors.budget = 'Budget must be greater than 0';
+    if (!formData.budget?.trim() || Number(formData.budget) <= 0)
+      newErrors.budget = 'Budget must be greater than 0';
     if (!token) newErrors.form = 'You must be logged in to create a team.';
     if (!currentAuctionIdNum) newErrors.form = 'Auction ID is required';
     if (typeof userId !== 'number') newErrors.form = 'Owner ID is required';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -342,14 +372,14 @@ const TeamRegistration: React.FC = () => {
         setFormData({
           name: '',
           budget: '',
-          logoFile: null,
+          logoFile: null,                
           logoPreview: null,
           ownerId: userId,
           auctionId: currentAuctionIdNum || 0,
         });
         setIsSuccess(false);
       }, 1200);
-    } catch (err) {
+    } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : 'Registration failed');
       console.error('Error creating team:', err);
     } finally {
@@ -373,11 +403,11 @@ const TeamRegistration: React.FC = () => {
 
       const data = await res.json();
       const detail: TeamDetail = {
-        id: data.id,
-        name: data.name,
+        id: Number(data.id),
+        name: String(data.name),
         budget: Number(data.budget),
         ownerId: Number(data.ownerId),
-        ownerMail: data.ownerMail,
+        ownerMail: String(data.ownerMail),
         auctionId: Number(data.auctionId),
         imageUrl: resolveImmediateImageSrc({
           imageUrl: data.imageUrl,
@@ -390,7 +420,7 @@ const TeamRegistration: React.FC = () => {
       setSelectedTeam(detail);
       setModalReadOnly(readOnly || !canEdit);
       setModalOpen(true);
-    } catch (e) {
+    } catch (e: unknown) {
       setUiError(e instanceof Error ? e.message : 'Failed to load team details');
       console.error('Error fetching team details:', e);
     } finally {
@@ -403,7 +433,7 @@ const TeamRegistration: React.FC = () => {
     if (!token || !selectedTeam) return;
 
     if (!canManageTeam(selectedTeam)) {
-      setUiError("You can only edit teams you own in the current auction.");
+      setUiError('You can only edit teams you own in the current auction.');
       return;
     }
 
@@ -435,7 +465,7 @@ const TeamRegistration: React.FC = () => {
       await fetchTeams();
       setModalOpen(false);
       setSelectedTeam(null);
-    } catch (e) {
+    } catch (e: unknown) {
       setUiError(e instanceof Error ? e.message : 'Failed to save changes');
       console.error('Error updating team:', e);
     } finally {
@@ -447,7 +477,7 @@ const TeamRegistration: React.FC = () => {
     if (!token || !teamToDelete) return;
 
     if (!canManageTeam(teamToDelete)) {
-      setUiError("You can only delete teams you own in the current auction.");
+      setUiError('You can only delete teams you own in the current auction.');
       return;
     }
 
@@ -468,7 +498,7 @@ const TeamRegistration: React.FC = () => {
       await fetchTeams();
       setDeleteModalOpen(false);
       setTeamToDelete(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('💥 Delete Error:', err);
       setUiError(err instanceof Error ? err.message : 'An error occurred while deleting');
     } finally {
@@ -484,12 +514,14 @@ const TeamRegistration: React.FC = () => {
     if (isCurrentAuction) {
       // Enhanced design for current auction teams
       return (
-        <li className={[
-          'rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1',
-          isOwner
-            ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-blue-200'
-            : 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-100 shadow-green-200'
-        ].join(' ')}>
+        <li
+          className={[
+            'rounded-xl border-2 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1',
+            isOwner
+              ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-blue-200'
+              : 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-100 shadow-green-200',
+          ].join(' ')}
+        >
           <div className="p-6">
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -531,9 +563,15 @@ const TeamRegistration: React.FC = () => {
             </div>
 
             <div className="mt-4 text-xs text-gray-600 space-y-1">
-              <div>Owner ID: <span className="font-medium text-gray-800">{team.ownerId}</span></div>
-              <div>Auction ID: <span className="font-medium text-green-700">{team.auctionId}</span></div>
-              <div>Status: <span className="font-medium capitalize text-green-600">{team.status ?? 'active'}</span></div>
+              <div>
+                Owner ID: <span className="font-medium text-gray-800">{team.ownerId}</span>
+              </div>
+              <div>
+                Auction ID: <span className="font-medium text-green-700">{team.auctionId}</span>
+              </div>
+              <div>
+                Status: <span className="font-medium capitalize text-green-600">{team.status ?? 'active'}</span>
+              </div>
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-2">
@@ -574,7 +612,6 @@ const TeamRegistration: React.FC = () => {
         </li>
       );
     } else {
-      // Simplified design for other auction teams
       return (
         <li className="rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow bg-gray-50">
           <div className="p-4">
@@ -589,16 +626,21 @@ const TeamRegistration: React.FC = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-gray-900">{team.name}</p>
-                 
                 </div>
                 <p className="text-xs text-gray-500">Other Auction Team</p>
               </div>
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-600">
-              <div>Budget: <span className="font-medium">{team.budget}</span></div>
-              <div>Auction: <span className="font-medium text-blue-600">{team.auctionId}</span></div>
-              <div>Status: <span className="font-medium">{team.status ?? 'active'}</span></div>
+              <div>
+                Budget: <span className="font-medium">{team.budget}</span>
+              </div>
+              <div>
+                Auction: <span className="font-medium text-blue-600">{team.auctionId}</span>
+              </div>
+              <div>
+                Status: <span className="font-medium">{team.status ?? 'active'}</span>
+              </div>
             </div>
 
             <div className="mt-4 flex items-center justify-end">
@@ -616,13 +658,17 @@ const TeamRegistration: React.FC = () => {
     }
   };
 
-  // ---------- Render ----------
+  
   return (
     <div className="bg-[url('/bg1.jpg')] bg-cover bg-center min-h-screen">
       <style jsx global>{`
         @keyframes grow {
-          from { width: 0%; }
-          to { width: 100%; }
+          from {
+            width: 0%;
+          }
+          to {
+            width: 100%;
+          }
         }
       `}</style>
 
@@ -636,7 +682,9 @@ const TeamRegistration: React.FC = () => {
               <Users className="w-8 h-8 text-green-600" />
             </div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Registration Successful</h2>
-            <p className="text-gray-600 mb-6">Your team has been registered successfully for Auction {currentAuctionIdNum}.</p>
+            <p className="text-gray-600 mb-6">
+              Your team has been registered successfully for Auction {currentAuctionIdNum}.
+            </p>
             <div className="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
               <div className="bg-green-600 h-1 rounded-full w-full animate-[grow_1.2s_ease]" />
             </div>
@@ -761,7 +809,10 @@ const TeamRegistration: React.FC = () => {
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                          <p className="mt-2 text-sm text-green-600">{formData.logoFile?.name}</p>
+                          {/* file name (optional) */}
+                          {formData.logoFile && (
+                            <p className="mt-2 text-sm text-green-600">{formData.logoFile.name}</p>
+                          )}
                         </div>
                       )}
                       {errors.logoFile && (
@@ -774,7 +825,9 @@ const TeamRegistration: React.FC = () => {
                   </div>
 
                   {serverError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">{serverError}</div>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                      {serverError}
+                    </div>
                   )}
                 </div>
 
@@ -851,7 +904,8 @@ const TeamRegistration: React.FC = () => {
                   <p className="text-sm text-gray-600 mt-1">Teams in Auction {currentAuctionIdNum}</p>
                 </div>
                 <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
-                  {categorizedTeams.currentAuctionTeams.length} team{categorizedTeams.currentAuctionTeams.length === 1 ? '' : 's'}
+                  {categorizedTeams.currentAuctionTeams.length} team
+                  {categorizedTeams.currentAuctionTeams.length === 1 ? '' : 's'}
                 </span>
               </div>
 
@@ -868,30 +922,6 @@ const TeamRegistration: React.FC = () => {
               )}
             </div>
           )}
-
-          {/* ===== Other Auction Teams ===== */}
-          {/* {categorizedTeams.otherAuctionTeams.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border">
-              <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-gray-600" />
-                    Other Auction Teams
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">Teams from other auctions</p>
-                </div>
-                <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium">
-                  {categorizedTeams.otherAuctionTeams.length} team{categorizedTeams.otherAuctionTeams.length === 1 ? '' : 's'}
-                </span>
-              </div>
-
-              <ul className="p-6 grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {categorizedTeams.otherAuctionTeams.map((team) => (
-                  <TeamCard key={team.id} team={team} isCurrentAuction={false} />
-                ))}
-              </ul>
-            </div>
-          )} */}
 
           {/* No teams message */}
           {teams.length === 0 && !listLoading && !listError && (
@@ -919,9 +949,7 @@ const TeamRegistration: React.FC = () => {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModalOpen(false)} />
           <div className="bg-white rounded-lg shadow-lg p-6 relative z-10 max-w-lg w-full">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {modalReadOnly ? 'Team Details' : 'Edit Team'}
-              </h3>
+              <h3 className="text-lg font-semibold">{modalReadOnly ? 'Team Details' : 'Edit Team'}</h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                   Auction {selectedTeam.auctionId}
@@ -960,7 +988,9 @@ const TeamRegistration: React.FC = () => {
                   value={selectedTeam.budget}
                   disabled={modalReadOnly}
                   onChange={(e) =>
-                    setSelectedTeam((prev) => (prev ? { ...prev, budget: Number(e.target.value) } : prev))
+                    setSelectedTeam((prev) =>
+                      prev ? { ...prev, budget: Number(e.target.value) } : prev
+                    )
                   }
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     modalReadOnly ? 'bg-gray-100 cursor-not-allowed' : ''
@@ -1024,8 +1054,8 @@ const TeamRegistration: React.FC = () => {
           <div className="bg-white rounded-lg shadow-lg p-6 relative z-10 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-2">Delete Team</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Are you sure you want to delete <span className="font-medium">{teamToDelete?.name}</span> from Auction {teamToDelete?.auctionId}?
-              This action cannot be undone.
+              Are you sure you want to delete <span className="font-medium">{teamToDelete?.name}</span> from Auction{' '}
+              {teamToDelete?.auctionId}? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button
