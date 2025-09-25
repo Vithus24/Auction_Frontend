@@ -158,7 +158,6 @@ console.log("auctions...",auctions);
       </div>
     );
   }
-  console.log("img",getImageUrl(auctions[4]));
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
