@@ -40,23 +40,11 @@ interface Auction extends AuctionFormData {
   id: number;
   status: string;
   image?: string;
-
-                // base64 OR url from API
-  imageUrl?: string;           // if backend sends a URL
+  imageUrl?: string;           
   imageContentType?: string;
 }
 
-type ImageState = {
-  file: File | null;
-  previewUrl: string | null;
-};
 
-type ModalState = {
-  isOpen: boolean;
-  mode: 'view' | 'edit' | null;
-  auctionId: number | null;
-  ownerId: number | null;
-};
 
 export default function TeamDashboard() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
@@ -86,8 +74,12 @@ export default function TeamDashboard() {
             status: a.status || 'unknown',
           }))
         );
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+  if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError(String(err));
+  }
       } finally {
         setLoading(false);
       }
@@ -113,13 +105,14 @@ console.log("auctions...",auctions);
     return matchesSearch && matchesFilter;
   });
 
+  const toNum = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0);
   const stats = {
     total: auctions.length,
     upcoming: auctions.filter((a) => (a.status?.toLowerCase() || '') === 'upcoming').length,
     live: auctions.filter((a) => (a.status?.toLowerCase() || '') === 'live').length,
     completed: auctions.filter((a) => (a.status?.toLowerCase() || '') === 'completed').length,
-    totalPlayers: auctions.reduce((sum, a) => sum + (a.playerPerTeam || 0), 0),
-    totalRevenue: auctions.reduce((sum, a) => sum + (a.minimumBid || 0), 0),
+    totalPlayers: auctions.reduce((sum, a) => sum + toNum(a.playerPerTeam), 0),
+    totalRevenue: auctions.reduce((sum, a) => sum +toNum (a.minimumBid), 0),
   };
 
   const getStatusColor = (status: string) => {
@@ -165,7 +158,6 @@ console.log("auctions...",auctions);
       </div>
     );
   }
-  console.log("img",getImageUrl(auctions[4]));
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">

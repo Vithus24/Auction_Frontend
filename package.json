@@ -14,6 +14,7 @@
     "@headlessui/react": "^2.2.8",
     "@mui/material": "^7.3.2",
     "@reduxjs/toolkit": "^2.9.0",
+    "@stomp/stompjs": "^7.2.0",
     "framer-motion": "^12.23.16",
     "lucide-react": "^0.544.0",
     "next": "^15.5.3",
@@ -22,7 +23,8 @@
     "react-countup": "^6.5.3",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.6.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
