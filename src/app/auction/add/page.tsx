@@ -172,13 +172,10 @@ const AuctionRegistration = () => {
 
     try {
       const formDataToSend = new FormData();
-
       const formatDateForBackend = (dateTimeString: string) => {
         if (!dateTimeString) return null;
         return dateTimeString + ':00';
       };
-
-      // Include adminId in the auction JSON object
       formDataToSend.append(
         'auction',
         new Blob(
