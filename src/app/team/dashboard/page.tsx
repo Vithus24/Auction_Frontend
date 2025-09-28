@@ -157,7 +157,6 @@ export default function TeamDashboard() {
       </div>
     );
   }
-  
 
   return (
     <div className="min-h-screen bg-[url('/bg1.jpg')] bg-cover bg-center bg-fixed">
