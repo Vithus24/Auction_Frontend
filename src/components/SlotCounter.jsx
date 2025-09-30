@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Users, DollarSign, Zap, Crown } from 'lucide-react';
 import useAuthToken from '@/lib/hooks/useAuthToken';
+import { useSearchParams } from "next/navigation";
+
 
 const SlotCounter = () => {
+  
   const [currentNumber, setCurrentNumber] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
   const [reelStates, setReelStates] = useState([false, false, false]);
@@ -13,13 +16,18 @@ const SlotCounter = () => {
   const [showWinEffect, setShowWinEffect] = useState(false);
   const [error, setError] = useState(null);
   const [lastResult, setLastResult] = useState(null);
-  const { token } = useAuthToken()
+  const { token } = useAuthToken();
+
+  const searchParams = useSearchParams();
+  const auctionId = searchParams.get('auctionId');
+  console.log('Auction ID from URL.........:', auctionId);
+
 
   const fetchRandomNumber = async () => {
   try {
     setError(null);
 
-    const response = await fetch('http://localhost:8080/players/5/available', {
+    const response = await fetch(`http://localhost:8080/players/${auctionId}/available`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +39,7 @@ const SlotCounter = () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json().catch(() => null);
-    console.log('API Response:', data);
+    console.log('API Response:.............', data);
     const value =
       typeof data === 'number'
         ? data

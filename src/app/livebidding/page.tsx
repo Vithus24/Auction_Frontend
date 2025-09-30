@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 import PlayerCard from "@/components/PlayerCard";
 import useAuthToken from "@/lib/hooks/useAuthToken";
 import useUserData from "@/lib/hooks/useUserData";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const Page = () => {
   const { token, clearToken } = useAuthToken();
   const { userId } = useUserData();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  
+     const auctionIdParam = searchParams.get('auctionId');
+  const playerIdParam = searchParams.get('playerId');
+  
+  const auctionId = auctionIdParam ? Number(auctionIdParam) : NaN;
+  const playerId = playerIdParam ? Number(playerIdParam) : NaN;
 
   useEffect(() => {
     setLoading(false);
@@ -46,8 +53,7 @@ const Page = () => {
     );
   }
 
-  const playerId = 1;
-  const auctionId = 1;
+ 
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">

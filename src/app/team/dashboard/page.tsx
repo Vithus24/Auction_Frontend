@@ -22,7 +22,7 @@ import {
 import { useRouter } from 'next/navigation';
 import useUserData from '@/lib/hooks/useUserData';
 import useAuthToken from '@/lib/hooks/useAuthToken';
-import toast from 'react-hot-toast';
+
 
 interface AuctionFormData {
   auctionName: string;
@@ -32,7 +32,6 @@ interface AuctionFormData {
   minimumBid: string;
   pointsPerTeam: string;
   playerPerTeam: string;
-
   ownerId: number;
 }
 
@@ -87,9 +86,8 @@ export default function TeamDashboard() {
 
     if (userId) fetchAuctions();
   }, [userId, token]);
-console.log("auctions...",auctions);
-  
 
+  
   const getImageUrl = (auction: Auction) => {
     if (auction.imageUrl) {
       return `http://localhost:8080${auction.imageUrl}`;
@@ -379,6 +377,17 @@ console.log("auctions...",auctions);
                               <Shield className="w-4 h-4" />
                               <span>Teams</span>
                             </button>
+
+                            <button
+                                                            onClick={() =>
+                                                              router.push(`/bid?auctionId=${auction.id}`)
+                                                            }
+                                                            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                                                            title="Go to live bidding"
+                                                          >
+                                                            <DollarSign className="w-4 h-4" />
+                                                            <span>Bid</span>
+                                                          </button>
                           </div>
                         </div>
                       </div>
