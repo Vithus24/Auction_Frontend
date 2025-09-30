@@ -47,12 +47,13 @@ export default function PlayerCard({
       try {
         setError(null);
         const res = await fetch(`http://localhost:8080/players/${playerId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}`},
         });
 
         if (!res.ok) throw new Error("Failed to fetch player");
 
         const data = await res.json();
+        
 
         const mapped: Player = {
           id: data.id,

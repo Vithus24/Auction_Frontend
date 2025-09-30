@@ -377,6 +377,17 @@ export default function TeamDashboard() {
                               <Shield className="w-4 h-4" />
                               <span>Teams</span>
                             </button>
+
+                            <button
+                                                            onClick={() =>
+                                                              router.push(`/bid?auctionId=${auction.id}`)
+                                                            }
+                                                            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 shadow-md cursor-pointer"
+                                                            title="Go to live bidding"
+                                                          >
+                                                            <DollarSign className="w-4 h-4" />
+                                                            <span>Bid</span>
+                                                          </button>
                           </div>
                         </div>
                       </div>

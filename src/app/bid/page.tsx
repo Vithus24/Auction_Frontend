@@ -7,6 +7,7 @@ import { ImageIcon } from "lucide-react";
 import PlayerCard from "@/components/PlayerCard";
 import useUserData from "@/lib/hooks/useUserData";
 import { useSearchParams } from "next/navigation";
+import SlotCounter from "@/components/SlotCounter";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -53,9 +54,21 @@ const getPlayerImageUrl = (player: Player) => {
 export default function BidingPage() {
   const { token } = useAuthToken();
   const { userId } = useUserData();
-   const searchParams = useSearchParams();
-  const auctionId = searchParams.get('auctionId');
-    const playerId = searchParams.get('playerId');
+  const searchParams = useSearchParams();
+  
+ const auctionIdParam = searchParams.get('auctionId');
+ const playerIdParam = searchParams.get('playerId');
+  
+  const auctionId = auctionIdParam ? Number(auctionIdParam) : NaN;
+  const playerId = playerIdParam ? Number(playerIdParam) : NaN;
+
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+const [showWheel, setShowWheel] = useState(true);
+
+
+   
+  // const auctionId = searchParams.get('auctionId');
+  //   const playerId = searchParams.get('playerId');
 
   // ---------- UI state ----------
   const [activeTab, setActiveTab] = useState<"teams" | "players">("teams");
@@ -207,6 +220,21 @@ export default function BidingPage() {
     return firstAvailable ?? players[0];
   }, [players]);
 
+  // Normalize ids from URL
+const hasValidAuctionId = Number.isFinite(auctionId);
+const hasValidPlayerIdFromUrl = Number.isFinite(playerId);
+
+// Choose a player to show: URL > first available > first player
+const effectivePlayerId = useMemo(() => {
+  if (hasValidPlayerIdFromUrl) return playerId;
+  if (currentPlayer?.id) return currentPlayer.id;
+  return NaN;
+}, [hasValidPlayerIdFromUrl, playerId, currentPlayer]);
+
+
+
+  
+
   const roleFilters = [
     "ALL",
     "BATSMAN",
@@ -301,7 +329,7 @@ export default function BidingPage() {
         </Card>
 
         {/* Current Player Card */}
-        {currentPlayer && (
+        {/* {currentPlayer && (
           <div className="bg-gradient-to-br from-yellow-800 to-yellow-700 rounded-xl border border-blue-400 p-3 sm:p-4">
             <div className="flex items-start justify-between mb-2 sm:mb-3">
               <div className="bg-yellow-400 text-black font-bold text-xs sm:text-sm px-2 py-0.5 rounded-tl-xl shadow">
@@ -346,14 +374,37 @@ export default function BidingPage() {
               {currentPlayer.team || "—"}
             </div>
           </div>
-        )}
+        )} */}
+<SlotCounter />
+<div className="min-h-screen bg-gray-900 py-8">
+  <div className="text-center mb-8">
+    <h1 className="text-3xl font-bold text-white mb-2">Live Auction</h1>
+    <p className="text-gray-400">
+      {Number.isFinite(effectivePlayerId) ? `Player #${effectivePlayerId}` : "No player selected"}
+    </p>
+  </div>
 
-        <PlayerCard
-                  playerId={playerId}
-                  auctionId={auctionId}
-                  token={token}
-                  userId={userId}
-                />
+  <div className="flex justify-center items-center">
+    {token && hasValidAuctionId && Number.isFinite(effectivePlayerId) ? (
+      <PlayerCard
+        playerId={effectivePlayerId}
+        auctionId={auctionId}
+        token={token}
+        userId={userId}
+      />
+    ) : (
+      <div className="bg-red-900/50 text-white p-4 rounded-xl w-[400px]">
+        {!token && <p>Missing auth token. Please sign in.</p>}
+        {!hasValidAuctionId && <p>Missing or invalid <code>auctionId</code> in URL.</p>}
+        {!Number.isFinite(effectivePlayerId) && <p>No player to display (none available).</p>}
+      </div>
+    )}
+  </div>
+</div>
+
+
+
+
 
         {/* Action Button */}
         <div className="flex justify-center pt-2 sm:pt-3">
