@@ -32,7 +32,6 @@ interface AuctionFormData {
   minimumBid: string;
   pointsPerTeam: string;
   playerPerTeam: string;
-
   ownerId: number;
 }
 

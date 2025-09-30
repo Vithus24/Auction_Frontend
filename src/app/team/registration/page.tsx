@@ -510,7 +510,6 @@ const TeamRegistration: React.FC = () => {
   const TeamCard: React.FC<{ team: Team; isCurrentAuction: boolean }> = ({ team, isCurrentAuction }) => {
     const isOwner = isTeamOwner(team);
     const canManage = canManageTeam(team);
-
     if (isCurrentAuction) {
       // Enhanced design for current auction teams
       return (

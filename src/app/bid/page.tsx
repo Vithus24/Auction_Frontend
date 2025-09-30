@@ -4,8 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@mui/material";
 import useAuthToken from "@/lib/hooks/useAuthToken";
 import { ImageIcon } from "lucide-react";
+import PlayerCard from "@/components/PlayerCard";
+import useUserData from "@/lib/hooks/useUserData";
+import { useSearchParams } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
 
 // ---------- Types normalized for your UI ----------
 interface Team {
@@ -48,6 +52,10 @@ const getPlayerImageUrl = (player: Player) => {
 
 export default function BidingPage() {
   const { token } = useAuthToken();
+  const { userId } = useUserData();
+   const searchParams = useSearchParams();
+  const auctionId = searchParams.get('auctionId');
+    const playerId = searchParams.get('playerId');
 
   // ---------- UI state ----------
   const [activeTab, setActiveTab] = useState<"teams" | "players">("teams");
@@ -339,6 +347,13 @@ export default function BidingPage() {
             </div>
           </div>
         )}
+
+        <PlayerCard
+                  playerId={playerId}
+                  auctionId={auctionId}
+                  token={token}
+                  userId={userId}
+                />
 
         {/* Action Button */}
         <div className="flex justify-center pt-2 sm:pt-3">
